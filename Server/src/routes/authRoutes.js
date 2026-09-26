@@ -7,7 +7,7 @@ import {
 } from "../controllers/authController.js";
 import { registerValidation } from "../validators/Register_validation.js";
 import { validate } from "../middlewares/validate.js";
-import { optionalAuth, protect } from "../middlewares/auth.js";
+import { optionalAuth } from "../middlewares/auth.js";
 
 const router = Router();
 
