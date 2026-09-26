@@ -20,7 +20,6 @@ export const buildPublicBlogFilter = ({ search, tag } = {}) => {
     filter.tags = { $in: [tagTerm] };
   }
 
-
   return filter;
 };
 
@@ -119,4 +118,10 @@ export const getDashboardStats = async (userId) => {
 };
 export const getAllBlogsDirect = async () => {
   return await Blog.find().populate("author", "name").sort({ createdAt: -1 });
+};
+
+export const getBlogsByAuthor = async (authorId) => {
+  return await Blog.find({ author: authorId })
+    .populate("author", "name")
+    .sort({ createdAt: -1 });
 };

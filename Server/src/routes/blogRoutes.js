@@ -6,6 +6,7 @@ import {
   getBlogById,
   updateBlog,
   deleteBlog,
+  getMyPosts,
 } from "../controllers/blogController.js";
 
 import { protect, optionalAuth } from "../middlewares/auth.js";
@@ -23,6 +24,22 @@ const router = Router();
  *   description: Blog management endpoints
  */
 /**
+ * @swagger
+ * /api/blogs/my-posts:
+ *   get:
+ *     summary: Get all posts belonging to the logged-in user
+ *     tags: [Blogs]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all posts belonging to the authenticated user
+ *       401:
+ *         description: Authentication required
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/my-posts", protect, getMyPosts);
 /**
  * @swagger
  * /api/blogs/all:
@@ -38,7 +55,7 @@ const router = Router();
 router.get("/all", getAllBlogsDirectController);
 /**
  * @swagger
- * /api/blogs:
+ * /api/blogs?query:
  *   get:
  *     summary: Get all published blogs
  *     tags: [Blogs]
@@ -144,7 +161,7 @@ router.get("/:id", optionalAuth, getBlogById);
  *       403:
  *         description: Admin access required
  */
-router.post("/", protect, blogValidation, validate, createBlog);
+router.post("/create", protect, blogValidation, validate, createBlog);
 
 /**
  * @swagger
