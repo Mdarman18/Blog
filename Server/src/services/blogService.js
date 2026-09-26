@@ -117,7 +117,9 @@ export const getDashboardStats = async (userId) => {
   });
 };
 export const getAllBlogsDirect = async () => {
-  return await Blog.find().populate("author", "name").sort({ createdAt: -1 });
+  return await Blog.find({ status: "publish" })
+    .populate("author", "name")
+    .sort({ createdAt: -1 });
 };
 
 export const getBlogsByAuthor = async (authorId) => {
