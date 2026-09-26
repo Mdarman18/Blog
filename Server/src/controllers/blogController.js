@@ -20,7 +20,7 @@ export const createBlog = catchAsync(async (req, res) => {
 export const getAllBlogs = catchAsync(async (req, res) => {
   const filter = blogService.buildPublicBlogFilter(req.query);
   console.log(filter);
-  
+
   const { page, limit } = req.query;
   const { blogs, pagination } = await blogService.getAllBlogs(filter, {
     page,
@@ -110,6 +110,15 @@ export const deleteBlog = catchAsync(async (req, res, next) => {
 
 export const getAllBlogsDirectController = catchAsync(async (req, res) => {
   const blogs = await blogService.getAllBlogsDirect();
+
+  res.status(200).json({
+    success: true,
+    results: blogs.length,
+    data: { blogs },
+  });
+});
+export const getMyPosts = catchAsync(async (req, res) => {
+  const blogs = await blogService.getBlogsByAuthor(req.user._id);
 
   res.status(200).json({
     success: true,
