@@ -16,6 +16,6 @@ export const blogValidation = [
 
   body("status")
     .optional()
-    .isIn(["Draft", "Published"])
-    .withMessage("Status must be either Draft or Published"),
+    .isIn(["draft", "publish"])
+    .withMessage("Status must be either draft or publish"),
 ];
