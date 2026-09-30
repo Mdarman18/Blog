@@ -29,6 +29,7 @@ export const register = catchAsync(async (req, res) => {
         email: user.email,
         role: user.role,
       },
+      token,
     },
   });
 });
@@ -48,6 +49,7 @@ export const login = catchAsync(async (req, res) => {
         email: user.email,
         role: user.role,
       },
+      token,
     },
   });
 });

@@ -11,7 +11,11 @@ import {
 
 import { protect, optionalAuth } from "../middlewares/auth.js";
 
-import { blogValidation } from "../validators/blog_validation.js";
+// FIX: update ke liye naya optional validator bhi import karo
+import {
+  blogValidation,
+  updateBlogValidation,
+} from "../validators/blog_validation.js";
 import { validate } from "../middlewares/validate.js";
 import { getAllBlogsDirectController } from "../controllers/blogController.js";
 
@@ -25,23 +29,6 @@ const router = Router();
  */
 /**
  * @swagger
- * /api/blogs/my-posts:
- *   get:
- *     summary: Get all posts belonging to the logged-in user
- *     tags: [Blogs]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of all posts belonging to the authenticated user
- *       401:
- *         description: Authentication required
- *       500:
- *         description: Internal server error
- */
-router.get("/my-posts", protect, getMyPosts);
-/**
- * @swagger
  * /api/blogs/all:
  *   get:
  *     summary: Get all blogs directly (no filters, no pagination)
@@ -53,6 +40,11 @@ router.get("/my-posts", protect, getMyPosts);
  *         description: Internal server error
  */
 router.get("/all", getAllBlogsDirectController);
+
+// FIX: /:id se pehle hona zaroori hai, warna "my-posts" ko id samajh lega
+// (agar ye route kisi aur file me already register hai to ye 1 line hata dena)
+router.get("/my-posts", protect, getMyPosts);
+
 /**
  * @swagger
  * /api/blogs?query:
@@ -210,8 +202,8 @@ router.post("/create", protect, blogValidation, validate, createBlog);
 router.put(
   "/:id",
   protect,
-
-  blogValidation,
+  // FIX: update pe koi field required nahi, isliye blogValidation ki jagah ye
+  updateBlogValidation,
   validate,
   updateBlog,
 );

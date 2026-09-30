@@ -25,7 +25,9 @@ setupSwagger(app);
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api", apiRoutes);
-
+app.get("/", (req, res) => {
+  res.send("success..");
+});
 // ── Error handling ────────────────────────────────────────────────────────────
 app.use(notFound);
 app.use(errorHandler);

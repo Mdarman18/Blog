@@ -10,8 +10,7 @@ const router = Router();
 
 router.use(protect);
 
-router.get("/blogs", getAllAdminBlogs);
-router.get("/stats", getDashboardStats);
+router.get("/blogs", protect, getAllAdminBlogs);
+router.get("/stats", protect, getDashboardStats);
 router.patch("/blogs/:id/status", toggleBlogStatus);
-
 export default router;
