@@ -138,3 +138,10 @@ export const toggleBlogStatus = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+export const getBlogsByAuthor = async (authorId) => {
+  return await Blog.find({ author: authorId })
+    .populate("author", "name")
+    .sort({ createdAt: -1 });
+};
+

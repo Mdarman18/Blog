@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
 export async function protect(req, res, next) {
-  const token = req.cookies?.token;
+  const token = req.cookies?.token || (req.headers.authorization && req.headers.authorization.startsWith("Bearer ") ? req.headers.authorization.split(" ")[1] : null);
 
   if (!token) {
     return res
@@ -38,7 +38,7 @@ export async function protect(req, res, next) {
 }
 
 export async function optionalAuth(req, res, next) {
-  const token = req.cookies?.token;
+  const token = req.cookies?.token || (req.headers.authorization && req.headers.authorization.startsWith("Bearer ") ? req.headers.authorization.split(" ")[1] : null);
 
   if (!token) {
     return next();

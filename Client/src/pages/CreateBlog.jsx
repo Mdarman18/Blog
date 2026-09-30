@@ -1,0 +1,38 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { blogApi } from '../api/blogApi';
+import BlogForm from '../components/BlogForm';
+import toast from 'react-hot-toast';
+
+export default function CreateBlog() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (data) => {
+    setIsSubmitting(true);
+    try {
+      await blogApi.createBlog(data);
+      toast.success('Blog created successfully!');
+      navigate('/dashboard');
+    } catch (err) {
+      if (err.response?.status !== 403) { // 403 is handled globally
+        toast.error(err.response?.data?.message || 'Failed to create blog. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto py-8">
+      <div className="mb-8 border-b border-gray-200 pb-4">
+        <h1 className="text-3xl font-bold text-gray-900">Write a New Blog</h1>
+        <p className="text-gray-600 mt-2">Share your thoughts with the world.</p>
+      </div>
+
+      <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100">
+        <BlogForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+      </div>
+    </div>
+  );
+}
