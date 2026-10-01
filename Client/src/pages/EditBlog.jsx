@@ -31,7 +31,7 @@ export default function EditBlog() {
     fetchBlog();
   }, [id]);
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data, imageFile) => {
     setIsSubmitting(true);
 
     // FIX: Send only changed fields, or early return if nothing changed
@@ -44,23 +44,23 @@ export default function EditBlog() {
       }
     });
 
-    if (Object.keys(changedFields).length === 0) {
+    if (Object.keys(changedFields).length === 0 && !imageFile) {
       toast.success("Kuch change nahi hua");
       setIsSubmitting(false);
       return;
     }
 
-    // DEBUG: remove after fix
-    if (import.meta.env.DEV) console.log("PUT payload:", changedFields);
-    console.log("Id", id);
+    const formData = new FormData();
+    Object.entries(changedFields).forEach(([key, value]) => {
+      formData.append(key, key === "tags" ? JSON.stringify(value) : value);
+    });
+    if (imageFile) formData.append("image", imageFile);
+
     try {
-      await blogApi.updateBlog(id, changedFields);
+      await blogApi.updateBlog(id, formData);
       toast.success("Blog updated successfully!");
       navigate(`/blogs/${id}`);
     } catch (err) {
-      // DEBUG: remove after fix
-      console.log("PUT error response:", err.response?.data);
-
       if (err.response?.status !== 403) {
         // FIX: Display specific server error msg
         const msg =
@@ -68,7 +68,6 @@ export default function EditBlog() {
           err.response?.data?.errors?.[0]?.msg ||
           "Validation error";
         toast.error(msg);
-        console.log(msg);
       }
     } finally {
       setIsSubmitting(false);
@@ -99,12 +98,16 @@ export default function EditBlog() {
 
   return (
     <div className="max-w-4xl mx-auto py-8">
-      <div className="mb-8 border-b border-gray-200 pb-4">
-        <h1 className="text-3xl font-bold text-gray-900">Edit Blog</h1>
-        <p className="text-gray-600 mt-2">Update your article details below.</p>
+      <div className="mb-8 border-b border-gray-200 pb-4 dark:border-gray-700">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          Edit Blog
+        </h1>
+        <p className="text-gray-600 mt-2 dark:text-gray-300">
+          Update your article details below.
+        </p>
       </div>
 
-      <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
         <BlogForm
           initialData={blog}
           onSubmit={handleSubmit}
