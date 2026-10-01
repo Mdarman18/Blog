@@ -1,12 +1,22 @@
+import mongoose from "mongoose";
 import { catchAsync } from "../utils/catchAsync.js";
 import { AppError } from "../utils/AppError.js";
 import * as blogService from "../services/blogService.js";
+import {
+  deleteFromCloudinary,
+  uploadToCloudinary,
+} from "../utils/uploadToCloudinary.js";
 
 export const createBlog = catchAsync(async (req, res) => {
   const blogData = {
     ...req.body,
     author: req.user.id,
   };
+
+  if (req.file) {
+    const result = await uploadToCloudinary(req.file.buffer);
+    blogData.image = { url: result.secure_url, publicId: result.public_id };
+  }
 
   const blog = await blogService.createBlog(blogData);
 
@@ -19,7 +29,6 @@ export const createBlog = catchAsync(async (req, res) => {
 
 export const getAllBlogs = catchAsync(async (req, res) => {
   const filter = blogService.buildPublicBlogFilter(req.query);
-  console.log(filter);
 
   const { page, limit } = req.query;
   const { blogs, pagination } = await blogService.getAllBlogs(filter, {
@@ -77,7 +86,21 @@ export const updateBlog = catchAsync(async (req, res, next) => {
     );
   }
 
-  const blog = await blogService.updateBlog(req.params.id, req.body);
+  const updateData = { ...req.body };
+  let uploadedImage;
+  if (req.file) {
+    uploadedImage = await uploadToCloudinary(req.file.buffer);
+    updateData.image = {
+      url: uploadedImage.secure_url,
+      publicId: uploadedImage.public_id,
+    };
+  }
+
+  const blog = await blogService.updateBlog(req.params.id, updateData);
+
+  if (uploadedImage && existingBlog.image?.publicId) {
+    await deleteFromCloudinary(existingBlog.image.publicId);
+  }
 
   res.status(200).json({
     success: true,
@@ -87,19 +110,30 @@ export const updateBlog = catchAsync(async (req, res, next) => {
 });
 
 export const deleteBlog = catchAsync(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return next(new AppError("Invalid blog ID", 400));
+  }
+
   const existingBlog = await blogService.getBlogById(req.params.id);
 
   if (!existingBlog) {
     return next(new AppError("Blog not found", 404));
   }
 
-  if (existingBlog.author._id.toString() !== req.user.id) {
+  const isAuthor =
+    existingBlog.author._id.toString() === req.user._id.toString();
+  const isAdmin = req.user.role === "admin";
+  if (!isAuthor && !isAdmin) {
     return next(
       new AppError("You are not authorized to delete this blog", 403),
     );
   }
 
-  await blogService.deleteBlog(req.params.id);
+  if (existingBlog.image?.publicId) {
+    await deleteFromCloudinary(existingBlog.image.publicId);
+  }
+
+  await blogService.deleteBlog(existingBlog._id);
 
   res.status(200).json({
     success: true,

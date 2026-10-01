@@ -1,10 +1,15 @@
-import BlogCard, { BlogCardSkeleton } from './BlogCard';
-import EmptyState from './EmptyState';
+import BlogCard, { BlogCardSkeleton } from "./BlogCard";
+import EmptyState from "./EmptyState";
 
-export default function BlogGrid({ blogs, loading, onTagClick, showStatus = false }) {
+export default function BlogGrid({
+  blogs,
+  loading,
+  onTagClick,
+  showStatus = false,
+}) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
         {[...Array(6)].map((_, i) => (
           <BlogCardSkeleton key={i} />
         ))}
@@ -15,8 +20,8 @@ export default function BlogGrid({ blogs, loading, onTagClick, showStatus = fals
   if (!blogs || blogs.length === 0) {
     return (
       <div className="py-12">
-        <EmptyState 
-          title="No blogs found" 
+        <EmptyState
+          title="No blogs found"
           description="We couldn't find any articles matching your criteria."
         />
       </div>
@@ -24,11 +29,11 @@ export default function BlogGrid({ blogs, loading, onTagClick, showStatus = fals
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
       {blogs.map((blog, idx) => (
-        <BlogCard 
-          key={blog._id || blog.id || idx} 
-          blog={blog} 
+        <BlogCard
+          key={blog._id || blog.id || idx}
+          blog={blog}
           onTagClick={onTagClick}
           showStatus={showStatus}
         />

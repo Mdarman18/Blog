@@ -102,15 +102,20 @@ export default function Home() {
   };
 
   return (
-    <div className="py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+    <div className="py-8 sm:py-12">
+      <div className="mb-10 flex flex-col items-start justify-between gap-7 border-b border-gray-200 pb-8 md:mb-12 md:flex-row md:items-end dark:border-white/10">
+        <div className="max-w-2xl">
+          <div className="hero-badge mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+            <span className="hero-live-dot h-1.5 w-1.5 rounded-full bg-emerald-300" />
+            A publication for curious minds
+          </div>
+          <h1 className="hero-title mb-3 text-4xl font-semibold leading-tight sm:text-5xl">
             Explore Blogs
           </h1>
-          <p className="text-gray-600">
+          <p className="max-w-xl text-base leading-7 text-gray-600 dark:text-white/70">
             Discover the latest articles, tutorials, and updates.
           </p>
+          <div className="hero-divider mt-6 h-px w-32" aria-hidden="true" />
         </div>
         <SearchBar
           value={searchInput}

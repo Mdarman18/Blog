@@ -19,6 +19,9 @@ import {
 import { validate } from "../middlewares/validate.js";
 import { getAllBlogsDirectController } from "../controllers/blogController.js";
 
+// CHANGED: image upload (multer) + tags parser
+import upload, { parseTags } from "../middlewares/upload.js";
+
 const router = Router();
 
 /**
@@ -112,16 +115,16 @@ router.get("/:id", optionalAuth, getBlogById);
 
 /**
  * @swagger
- * /api/blogs:
+ * /api/blogs/create:
  *   post:
- *     summary: Create a new blog (Admin only)
+ *     summary: Create a new blog with optional image (Admin only)
  *     tags: [Blogs]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -134,15 +137,19 @@ router.get("/:id", optionalAuth, getBlogById);
  *               content:
  *                 type: string
  *               tags:
- *                 type: array
- *                 items:
- *                   type: string
+ *                 type: string
+ *                 description: JSON array string ya comma separated values
+ *                 example: '["react","node"]'
  *               conclusion:
  *                 type: string
  *               status:
  *                 type: string
  *                 enum: [draft, publish]
  *                 default: draft
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Blog image (max 5MB, only image files)
  *     responses:
  *       201:
  *         description: Blog created successfully
@@ -153,13 +160,22 @@ router.get("/:id", optionalAuth, getBlogById);
  *       403:
  *         description: Admin access required
  */
-router.post("/create", protect, blogValidation, validate, createBlog);
+// CHANGED: upload.single("image") + parseTags add kiye (order important hai)
+router.post(
+  "/create",
+  protect,
+  upload.single("image"),
+  parseTags,
+  blogValidation,
+  validate,
+  createBlog,
+);
 
 /**
  * @swagger
  * /api/blogs/{id}:
  *   put:
- *     summary: Update a blog (Admin only)
+ *     summary: Update a blog, optionally replace image (Admin only)
  *     tags: [Blogs]
  *     security:
  *       - bearerAuth: []
@@ -172,7 +188,7 @@ router.post("/create", protect, blogValidation, validate, createBlog);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -181,14 +197,18 @@ router.post("/create", protect, blogValidation, validate, createBlog);
  *               content:
  *                 type: string
  *               tags:
- *                 type: array
- *                 items:
- *                   type: string
+ *                 type: string
+ *                 description: JSON array string ya comma separated values
+ *                 example: '["react","node"]'
  *               conclusion:
  *                 type: string
  *               status:
  *                 type: string
  *                 enum: [draft, publish]
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Nayi image (purani Cloudinary se delete ho jayegi)
  *     responses:
  *       200:
  *         description: Blog updated successfully
@@ -202,6 +222,9 @@ router.post("/create", protect, blogValidation, validate, createBlog);
 router.put(
   "/:id",
   protect,
+  // CHANGED: image + tags parsing add ki
+  upload.single("image"),
+  parseTags,
   // FIX: update pe koi field required nahi, isliye blogValidation ki jagah ye
   updateBlogValidation,
   validate,

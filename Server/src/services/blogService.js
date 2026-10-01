@@ -40,8 +40,11 @@ export const buildAdminBlogFilter = ({ search, tag, status } = {}) => {
     filter.tags = { $in: [tagTerm] };
   }
 
-  if (status === "draft" || status === "published") {
-    filter.status = status;
+  const normalizedStatus =
+    typeof status === "string" ? status.trim().toLowerCase() : "";
+  if (normalizedStatus === "draft") filter.status = "draft";
+  if (normalizedStatus === "publish" || normalizedStatus === "published") {
+    filter.status = "publish";
   }
 
   return filter;
