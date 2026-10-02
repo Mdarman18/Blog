@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TagInput from "./TagInput";
 import MarkdownContent from "./MarkdownContent";
+import { optimizeImage } from "../utils/optimizeImage";
 
 export default function BlogForm({
   initialData = null,
@@ -282,8 +283,12 @@ export default function BlogForm({
         {imagePreview && (
           <div className="mt-3">
             <img
-              src={imagePreview}
+              src={optimizeImage(imagePreview, 800)}
               alt="Blog cover preview"
+              width="800"
+              height="450"
+              loading="lazy"
+              decoding="async"
               className="max-h-56 rounded-md border border-gray-300 object-cover dark:border-gray-600"
             />
             {imageFile && (

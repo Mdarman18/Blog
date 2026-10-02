@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Bookmark, ArrowRight, CalendarDays, Clock3 } from "lucide-react";
 import { getBlogId } from "../api/normalize";
+import { optimizeImage } from "../utils/optimizeImage";
 import StatusBadge from "./StatusBadge"; // Optional if you want to keep status capability
 
 const getPlainTextExcerpt = (value) => {
@@ -67,9 +68,13 @@ export default function BlogCard({
       {/* Background image */}
       {!imgFailed && imageUrl && (
         <img
-          src={imageUrl}
+          src={optimizeImage(imageUrl, 800)}
           alt={blog?.title}
-          loading="lazy"
+          width="800"
+          height="934"
+          loading={index === 0 ? undefined : "lazy"}
+          fetchPriority={index === 0 ? "high" : undefined}
+          decoding="async"
           onError={() => setImgFailed(true)}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-[850ms] ease-out group-hover:scale-110"
         />
@@ -100,9 +105,9 @@ export default function BlogCard({
 
       {/* Bottom content */}
       <div className="blog-card-content absolute inset-x-3 bottom-3 rounded-[18px] p-4 text-white sm:inset-x-4 sm:bottom-4 sm:p-5">
-        <h3 className="line-clamp-2 text-xl font-semibold leading-snug tracking-tight">
+        <h2 className="line-clamp-2 text-xl font-semibold leading-snug tracking-tight">
           {blog?.title}
-        </h3>
+        </h2>
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/70">
           {excerpt}
         </p>
@@ -110,9 +115,12 @@ export default function BlogCard({
         <div className="mt-4 flex items-center gap-3 text-xs text-white/65">
           {avatarUrl && (
             <img
-              src={avatarUrl}
+              src={optimizeImage(avatarUrl, 72)}
               alt={authorName}
+              width="36"
+              height="36"
               loading="lazy"
+              decoding="async"
               className="h-9 w-9 rounded-full border border-white/40 p-0.5 object-cover shadow-[0_0_0_2px_rgba(255,255,255,0.08)]"
             />
           )}
@@ -133,6 +141,7 @@ export default function BlogCard({
 
         <a
           href={blogLink}
+          aria-label={`Read ${blog?.title || "blog"}`}
           className="blog-card-action mt-4 inline-flex items-center justify-center gap-2 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
         >
           <span className="blog-card-action-label">Read</span>

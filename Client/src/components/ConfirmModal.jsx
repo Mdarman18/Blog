@@ -37,12 +37,12 @@ export default function ConfirmModal({
               </div>
               <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                 <div className="flex justify-between items-center">
-                  <h3
+                  <h2
                     className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100"
                     id="modal-title"
                   >
                     {title}
-                  </h3>
+                  </h2>
                   <button
                     onClick={onCancel}
                     disabled={isLoading}

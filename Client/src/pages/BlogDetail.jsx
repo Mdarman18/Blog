@@ -108,9 +108,9 @@ export default function BlogDetail() {
     if (error.status === 401) {
       return (
         <div className="py-16 text-center">
-          <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">
             Login Required
-          </h2>
+          </h1>
           <p className="mb-6 text-gray-600 dark:text-gray-300">
             You need to be logged in to view this blog.
           </p>
@@ -130,9 +130,9 @@ export default function BlogDetail() {
     if (error.status === 404) {
       return (
         <div className="py-16 text-center">
-          <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">
             Blog Not Found
-          </h2>
+          </h1>
           <p className="mb-6 text-gray-600 dark:text-gray-300">
             The article you are looking for does not exist or has been removed.
           </p>
@@ -284,8 +284,12 @@ export default function BlogDetail() {
         <figure className="mx-1 mb-12 mt-8 sm:mx-4 sm:mt-10">
           <div className="aspect-video overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
             <img
-              src={imageUrl}
+              src={optimizeImage(imageUrl, 1200)}
               alt={blog.title}
+              width="1200"
+              height="675"
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover"
             />
           </div>

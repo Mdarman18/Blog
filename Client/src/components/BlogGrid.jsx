@@ -34,6 +34,7 @@ export default function BlogGrid({
         <BlogCard
           key={blog._id || blog.id || idx}
           blog={blog}
+          index={idx}
           onTagClick={onTagClick}
           showStatus={showStatus}
         />
