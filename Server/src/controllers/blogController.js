@@ -120,9 +120,12 @@ export const deleteBlog = catchAsync(async (req, res, next) => {
     return next(new AppError("Blog not found", 404));
   }
 
-  const isAuthor =
-    existingBlog.author._id.toString() === req.user._id.toString();
+  const authorId = existingBlog.author?._id?.toString() || existingBlog.author?.toString();
+  const userId = req.user._id?.toString() || req.user.id?.toString();
+
+  const isAuthor = authorId && userId && authorId === userId;
   const isAdmin = req.user.role === "admin";
+
   if (!isAuthor && !isAdmin) {
     return next(
       new AppError("You are not authorized to delete this blog", 403),
@@ -130,7 +133,11 @@ export const deleteBlog = catchAsync(async (req, res, next) => {
   }
 
   if (existingBlog.image?.publicId) {
-    await deleteFromCloudinary(existingBlog.image.publicId);
+    try {
+      await deleteFromCloudinary(existingBlog.image.publicId);
+    } catch (error) {
+      console.error("Failed to delete image from Cloudinary:", error);
+    }
   }
 
   await blogService.deleteBlog(existingBlog._id);

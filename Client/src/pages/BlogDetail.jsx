@@ -18,6 +18,7 @@ import ErrorMessage from "../components/ErrorMessage";
 import Loader from "../components/Loader";
 import MarkdownContent from "../components/MarkdownContent";
 import toast from "react-hot-toast";
+import { optimizeImage } from "../utils/optimizeImage";
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -288,7 +289,7 @@ export default function BlogDetail() {
               alt={blog.title}
               width="1200"
               height="675"
-              loading="lazy"
+              fetchpriority="high"
               decoding="async"
               className="h-full w-full object-cover"
             />
