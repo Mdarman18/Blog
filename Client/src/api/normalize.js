@@ -1,9 +1,14 @@
+export const normalizeBlogStatus = (status) => {
+  const normalized =
+    typeof status === "string" ? status.trim().toLowerCase() : "";
+  return normalized === "published" ? "publish" : normalized;
+};
+
 // FIX: axios response ko unwrap karo, aur data.data object ke andar se array dhoondo
 export const normalizeBlogList = (res) => {
   // Axios response ho to body nikalo, warna res ko hi body maan lo
   const body = res?.config ? res.data : res;
   const payload = body?.data ?? body;
-
   let blogs = [];
   if (Array.isArray(payload)) {
     blogs = payload;
@@ -16,7 +21,6 @@ export const normalizeBlogList = (res) => {
       Object.values(payload).find(Array.isArray) ||
       [];
   }
-
   // Pagination body ke top level pe hai (res.data.pagination)
   const p = body?.pagination || payload?.pagination || {};
   const total = p.total ?? p.totalBlogs ?? p.totalDocs ?? body?.total;
