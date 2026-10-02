@@ -9,7 +9,7 @@ import { errorHandler } from "./src/middlewares/errorHandler.js";
 import { notFound } from "./src/middlewares/notFound.js";
 import apiRoutes from "./src/routes/index.js";
 import { setupSwagger } from "./src/swagger.js";
-
+import { connectDB } from "./src/config/db.js";
 const app = express();
 
 // ── Core middlewares ──────────────────────────────────────────────────────────
@@ -19,7 +19,7 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+ await connectDB();
 // ── Swagger Documentation ─────────────────────────────────────────────────────
 setupSwagger(app);
 
