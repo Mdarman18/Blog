@@ -10,4 +10,7 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
 };
+console.log(env);

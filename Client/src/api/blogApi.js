@@ -7,6 +7,7 @@ export const blogApi = {
   getBlog: (id) => axiosInstance.get(`/api/blogs/${id}`),
   createBlog: (data) => axiosInstance.post("/api/blogs/create", data),
   updateBlog: (id, data) => axiosInstance.put(`/api/blogs/${id}`, data),
+  generateBlog: (title) => axiosInstance.post("/api/ai/generate", { title }),
   deleteBlog: async (id) => {
     const url = `/api/blogs/${id}`;
     if (import.meta.env.DEV) console.debug("[blog delete request]", url);

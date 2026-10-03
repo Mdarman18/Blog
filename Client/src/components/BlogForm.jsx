@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import TagInput from "./TagInput";
 import MarkdownContent from "./MarkdownContent";
 import { optimizeImage } from "../utils/optimizeImage";
+import { blogApi } from "../api/blogApi";
+import toast from "react-hot-toast";
+import { Sparkles } from "lucide-react";
 
 export default function BlogForm({
   initialData = null,
@@ -22,6 +25,7 @@ export default function BlogForm({
   const [titleTab, setTitleTab] = useState("write"); // CHANGED: title markdown tab
   const [contentTab, setContentTab] = useState("write");
   const [conclusionTab, setConclusionTab] = useState("write");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // CHANGED (image): selected file + preview
   const [imageFile, setImageFile] = useState(null);
@@ -80,15 +84,56 @@ export default function BlogForm({
     }
   };
 
+  const handleAIGenerate = async () => {
+    if (!formData.title.trim()) {
+      toast.error("Please enter a title first to generate content.");
+      return;
+    }
+    
+    if (formData.content.trim() && !window.confirm("This will overwrite your existing content. Do you want to proceed?")) {
+      return;
+    }
+
+    setIsGenerating(true);
+    const toastId = toast.loading("Generating content with AI...");
+    
+    try {
+      const response = await blogApi.generateBlog(formData.title);
+      const generatedContent = response.data?.data?.content || "";
+      
+      setFormData(prev => ({ ...prev, content: generatedContent }));
+      toast.success("Content generated successfully!", { id: toastId });
+      setContentTab("write");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to generate content.",
+        { id: toastId }
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label
-          htmlFor="title"
-          className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
-        >
-          Title <span className="text-red-700 dark:text-red-400">*</span>
-        </label>
+        <div className="flex items-center justify-between mb-1">
+          <label
+            htmlFor="title"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Title <span className="text-red-700 dark:text-red-400">*</span>
+          </label>
+          <button
+            type="button"
+            onClick={handleAIGenerate}
+            disabled={isGenerating || isSubmitting}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 transition-colors dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {isGenerating ? "Generating..." : "Generate with AI"}
+          </button>
+        </div>
         {/* CHANGED: title ke liye Write / Preview tabs */}
         <div
           className="mb-2 flex gap-2"
