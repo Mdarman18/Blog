@@ -146,10 +146,12 @@ router.get("/:id", optionalAuth, getBlogById);
  *                 type: string
  *                 enum: [draft, publish]
  *                 default: draft
- *               image:
- *                 type: string
- *                 format: binary
- *                 description: Blog image (max 5MB, only image files)
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Blog images (max 5 images, up to 5MB each, only image files)
  *     responses:
  *       201:
  *         description: Blog created successfully
@@ -160,11 +162,11 @@ router.get("/:id", optionalAuth, getBlogById);
  *       403:
  *         description: Admin access required
  */
-// CHANGED: upload.single("image") + parseTags add kiye (order important hai)
+// CHANGED: upload.array("images", 5) + parseTags add kiye (order important hai)
 router.post(
   "/create",
   protect,
-  upload.single("image"),
+  upload.array("images", 5),
   parseTags,
   blogValidation,
   validate,
@@ -205,10 +207,12 @@ router.post(
  *               status:
  *                 type: string
  *                 enum: [draft, publish]
- *               image:
- *                 type: string
- *                 format: binary
- *                 description: Nayi image (purani Cloudinary se delete ho jayegi)
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Nayi images (purani Cloudinary se delete ho jayegi)
  *     responses:
  *       200:
  *         description: Blog updated successfully
@@ -223,7 +227,7 @@ router.put(
   "/:id",
   protect,
   // CHANGED: image + tags parsing add ki
-  upload.single("image"),
+  upload.array("images", 5),
   parseTags,
   // FIX: update pe koi field required nahi, isliye blogValidation ki jagah ye
   updateBlogValidation,

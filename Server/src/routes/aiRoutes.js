@@ -7,7 +7,7 @@ const router = Router();
 
 // Rate limiter: max 5 requests per 15 minutes per IP
 const aiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   max: 5,
   message: {
     success: false,

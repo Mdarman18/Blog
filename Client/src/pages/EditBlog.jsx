@@ -31,7 +31,7 @@ export default function EditBlog() {
     fetchBlog();
   }, [id]);
 
-  const handleSubmit = async (data, imageFile) => {
+  const handleSubmit = async (data, imageFiles) => {
     setIsSubmitting(true);
 
     // FIX: Send only changed fields, or early return if nothing changed
@@ -44,7 +44,9 @@ export default function EditBlog() {
       }
     });
 
-    if (Object.keys(changedFields).length === 0 && !imageFile) {
+    const hasNewImages = imageFiles && imageFiles.length > 0;
+
+    if (Object.keys(changedFields).length === 0 && !hasNewImages) {
       toast.success("Kuch change nahi hua");
       setIsSubmitting(false);
       return;
@@ -54,7 +56,12 @@ export default function EditBlog() {
     Object.entries(changedFields).forEach(([key, value]) => {
       formData.append(key, key === "tags" ? JSON.stringify(value) : value);
     });
-    if (imageFile) formData.append("image", imageFile);
+    
+    if (hasNewImages) {
+      imageFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+    }
 
     try {
       await blogApi.updateBlog(id, formData);

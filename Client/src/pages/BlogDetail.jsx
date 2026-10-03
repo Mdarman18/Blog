@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import {
   ArrowLeft,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Edit,
   Share2,
@@ -28,6 +30,7 @@ export default function BlogDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null); // { status, message }
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const fetchBlog = async () => {
@@ -170,7 +173,24 @@ export default function BlogDetail() {
     .split(/\s+/)
     .filter(Boolean).length;
   const readingMinutes = Math.max(1, Math.ceil(wordCount / 220));
-  const imageUrl = blog.image?.url || blog.coverImage;
+  
+  let images = blog.images || [];
+  if (images.length === 0) {
+    if (blog.image?.url) {
+      images = [blog.image];
+    } else if (blog.coverImage) {
+      images = [{ url: blog.coverImage }];
+    }
+  }
+  const hasImages = images.length > 0;
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
 
   return (
     <article className="mx-auto max-w-5xl pb-20 pt-4 sm:pt-8">
@@ -279,18 +299,52 @@ export default function BlogDetail() {
         </div>
       </header>
 
-      {imageUrl && (
+      {hasImages && (
         <figure className="mx-1 mb-12 mt-8 sm:mx-4 sm:mt-10">
-          <div className="aspect-video overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
-            <img
-              src={optimizeImage(imageUrl, 1200)}
-              alt={blog.title}
-              width="1200"
-              height="675"
-              fetchpriority="high"
-              decoding="async"
-              className="h-full w-full object-cover"
-            />
+          <div className="group relative aspect-video overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={prevImage}
+                  aria-label="Previous image"
+                  className="absolute left-2 sm:left-4 top-1/2 z-10 flex h-8 w-8 sm:h-12 sm:w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white opacity-100 transition-opacity hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-primary sm:opacity-0 sm:focus:opacity-100 sm:group-hover:opacity-100"
+                >
+                  <ChevronLeft className="h-5 w-5 sm:h-8 sm:w-8" />
+                </button>
+                <button
+                  type="button"
+                  onClick={nextImage}
+                  aria-label="Next image"
+                  className="absolute right-2 sm:right-4 top-1/2 z-10 flex h-8 w-8 sm:h-12 sm:w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white opacity-100 transition-opacity hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-primary sm:opacity-0 sm:focus:opacity-100 sm:group-hover:opacity-100"
+                >
+                  <ChevronRight className="h-5 w-5 sm:h-8 sm:w-8" />
+                </button>
+                
+                <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-xs font-medium tracking-widest text-white backdrop-blur-sm">
+                  {currentImageIndex + 1} / {images.length}
+                </div>
+              </>
+            )}
+
+            <div
+              className="flex h-full w-full transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+            >
+              {images.map((image, idx) => (
+                <div key={idx} className="h-full w-full shrink-0">
+                  <img
+                    src={optimizeImage(image.url, 1200)}
+                    alt={`${blog.title} - image ${idx + 1}`}
+                    width="1200"
+                    height="675"
+                    fetchpriority={idx === 0 ? "high" : "auto"}
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </figure>
       )}

@@ -8,14 +8,19 @@ export default function CreateBlog() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (data, imageFile) => {
+  const handleSubmit = async (data, imageFiles) => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         formData.append(key, key === "tags" ? JSON.stringify(value) : value);
       });
-      if (imageFile) formData.append("image", imageFile);
+      
+      if (imageFiles && imageFiles.length > 0) {
+        imageFiles.forEach((file) => {
+          formData.append("images", file);
+        });
+      }
 
       await blogApi.createBlog(formData);
       toast.success("Blog created successfully!");

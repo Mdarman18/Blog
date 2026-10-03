@@ -5,7 +5,7 @@ import MarkdownContent from "./MarkdownContent";
 import { optimizeImage } from "../utils/optimizeImage";
 import { blogApi } from "../api/blogApi";
 import toast from "react-hot-toast";
-import { Sparkles } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 
 export default function BlogForm({
   initialData = null,
@@ -27,43 +27,58 @@ export default function BlogForm({
   const [conclusionTab, setConclusionTab] = useState("write");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // CHANGED (image): selected file + preview
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(
-    initialData?.image?.url || "",
-  );
+  const existingImages = initialData?.images || (initialData?.image ? [initialData.image] : []);
 
-  // CHANGED (image): blob URL cleanup
+  const [imageFiles, setImageFiles] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
+
   useEffect(() => {
+    const urls = imageFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
     return () => {
-      if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
+      urls.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [imagePreview]);
+  }, [imageFiles]);
 
-  // CHANGED (image)
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setErrors((prev) => ({ ...prev, image: "Only image files are allowed" }));
-      return;
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length === 0) return;
+
+    let validFiles = [];
+    for (const file of selectedFiles) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image file.`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} exceeds 5MB limit.`);
+        continue;
+      }
+      validFiles.push(file);
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({
-        ...prev,
-        image: "Image 5MB se chhoti honi chahiye",
-      }));
-      return;
+
+    if (imageFiles.length + validFiles.length > 5) {
+      setErrors((prev) => ({ ...prev, images: "You can upload a maximum of 5 images." }));
+      const availableSlots = Math.max(0, 5 - imageFiles.length);
+      validFiles = validFiles.slice(0, availableSlots);
+    } else {
+      setErrors((prev) => ({ ...prev, images: undefined }));
     }
-    setErrors((prev) => ({ ...prev, image: undefined }));
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+
+    setImageFiles((prev) => [...prev, ...validFiles]);
+    
+    // Clear input so same file can be selected again if removed
+    e.target.value = null; 
   };
 
-  // CHANGED (image): nayi select ki hui image hatao (purani saved image wapas dikhegi)
-  const handleImageRemove = () => {
-    setImageFile(null);
-    setImagePreview(initialData?.image?.url || "");
+  const removeImage = (indexToRemove) => {
+    setImageFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setErrors((prev) => ({ ...prev, images: undefined }));
+  };
+
+  const revertToExisting = () => {
+    setImageFiles([]);
+    setErrors((prev) => ({ ...prev, images: undefined }));
   };
 
   const validate = () => {
@@ -78,9 +93,7 @@ export default function BlogForm({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
-      // Send changed fields if it's edit, or full data if it's create.
-      // For simplicity here, we send all data, which works for both CREATE and PUT.
-      onSubmit(formData, imageFile); // CHANGED (image): 2nd argument = file
+      onSubmit(formData, imageFiles); 
     }
   };
 
@@ -305,45 +318,94 @@ export default function BlogForm({
         )}
       </div>
 
-      {/* CHANGED (image): image upload field */}
       <div>
         <label
-          htmlFor="image"
+          htmlFor="images"
           className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
         >
-          Cover Image
+          Blog Images (Max 5)
         </label>
-        <input
-          id="image"
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          className="w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200 dark:text-gray-300 dark:file:bg-gray-700 dark:file:text-gray-100"
-        />
-        {errors.image && (
+        {imageFiles.length < 5 && (
+          <input
+            id="images"
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageChange}
+            className="w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200 dark:text-gray-300 dark:file:bg-gray-700 dark:file:text-gray-100"
+          />
+        )}
+        {errors.images && (
           <p className="mt-1 text-sm text-red-700 dark:text-red-400">
-            {errors.image}
+            {errors.images}
           </p>
         )}
-        {imagePreview && (
-          <div className="mt-3">
-            <img
-              src={optimizeImage(imagePreview, 800)}
-              alt="Blog cover preview"
-              width="800"
-              height="450"
-              loading="lazy"
-              decoding="async"
-              className="max-h-56 rounded-md border border-gray-300 object-cover dark:border-gray-600"
-            />
-            {imageFile && (
-              <button
-                type="button"
-                onClick={handleImageRemove}
-                className="mt-2 text-sm text-red-700 hover:underline dark:text-red-400"
-              >
-                Remove selected image
-              </button>
+
+        <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          {imageFiles.length} / 5 images selected
+        </div>
+
+        {/* Preview Newly Selected Images */}
+        {imageFiles.length > 0 && (
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {previewUrls.map((url, idx) => (
+              <div key={idx} className="group relative aspect-square rounded-md overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <img
+                  src={url}
+                  alt={`Preview ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                  {idx + 1}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeImage(idx)}
+                  aria-label={`Remove image ${idx + 1}`}
+                  className="absolute top-1 right-1 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Revert / Info about existing images */}
+        {initialData && existingImages.length > 0 && (
+          <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+            {imageFiles.length > 0 ? (
+              <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md border border-blue-100 dark:border-blue-800">
+                <span className="text-sm text-blue-800 dark:text-blue-200">
+                  New images will replace all {existingImages.length} existing images upon save.
+                </span>
+                <button
+                  type="button"
+                  onClick={revertToExisting}
+                  className="text-sm font-medium text-blue-700 hover:underline dark:text-blue-300"
+                >
+                  Cancel replacing
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
+                  Existing Images ({existingImages.length}):
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {existingImages.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={optimizeImage(img.url, 150)}
+                      alt={`Existing ${idx + 1}`}
+                      className="h-16 w-16 object-cover rounded border border-gray-300 dark:border-gray-600"
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2 dark:text-gray-400">
+                  Select new images to replace these existing ones.
+                </p>
+              </div>
             )}
           </div>
         )}

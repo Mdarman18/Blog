@@ -13,9 +13,15 @@ export const createBlog = catchAsync(async (req, res) => {
     author: req.user.id,
   };
 
-  if (req.file) {
-    const result = await uploadToCloudinary(req.file.buffer);
-    blogData.image = { url: result.secure_url, publicId: result.public_id };
+  delete blogData.images;
+  delete blogData.image;
+
+  blogData.images = [];
+  if (req.files && req.files.length > 0) {
+    for (const file of req.files) {
+      const result = await uploadToCloudinary(file.buffer);
+      blogData.images.push({ url: result.secure_url, publicId: result.public_id });
+    }
   }
 
   const blog = await blogService.createBlog(blogData);
@@ -87,20 +93,46 @@ export const updateBlog = catchAsync(async (req, res, next) => {
   }
 
   const updateData = { ...req.body };
-  let uploadedImage;
-  if (req.file) {
-    uploadedImage = await uploadToCloudinary(req.file.buffer);
-    updateData.image = {
-      url: uploadedImage.secure_url,
-      publicId: uploadedImage.public_id,
-    };
+  
+  // Prevent Mongoose CastError: Do not allow raw req.body.images to be saved directly
+  delete updateData.images;
+  delete updateData.image;
+
+  if (req.files && req.files.length > 0) {
+    const newImages = [];
+    for (const file of req.files) {
+      const result = await uploadToCloudinary(file.buffer);
+      newImages.push({
+        url: result.secure_url,
+        publicId: result.public_id,
+      });
+    }
+    updateData.images = newImages;
+
+    // Delete old images
+    if (Array.isArray(existingBlog.images)) {
+      for (const image of existingBlog.images) {
+        if (image?.publicId) {
+          try {
+            await deleteFromCloudinary(image.publicId);
+          } catch (error) {
+            console.error("Failed to delete old image from Cloudinary:", error);
+          }
+        }
+      }
+    }
+    
+    // Backward compatibility for old blogs
+    if (existingBlog.image && existingBlog.image.publicId) {
+      try {
+        await deleteFromCloudinary(existingBlog.image.publicId);
+      } catch (error) {
+        console.error("Failed to delete old image from Cloudinary:", error);
+      }
+    }
   }
 
   const blog = await blogService.updateBlog(req.params.id, updateData);
-
-  if (uploadedImage && existingBlog.image?.publicId) {
-    await deleteFromCloudinary(existingBlog.image.publicId);
-  }
 
   res.status(200).json({
     success: true,
@@ -132,6 +164,19 @@ export const deleteBlog = catchAsync(async (req, res, next) => {
     );
   }
 
+  if (Array.isArray(existingBlog.images)) {
+    for (const image of existingBlog.images) {
+      if (image?.publicId) {
+        try {
+          await deleteFromCloudinary(image.publicId);
+        } catch (error) {
+          console.error("Failed to delete image from Cloudinary:", error);
+        }
+      }
+    }
+  }
+
+  // Backward compatibility for old blogs
   if (existingBlog.image?.publicId) {
     try {
       await deleteFromCloudinary(existingBlog.image.publicId);

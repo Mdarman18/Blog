@@ -44,7 +44,7 @@ export default function BlogCard({
 
   const authorName = blog?.author?.name || "Anonymous";
   const avatarUrl = blog?.author?.avatar || blog?.avatar;
-  const imageUrl = blog?.image?.url || blog?.coverImage;
+  const imageUrl = blog?.images?.[0]?.url || blog?.image?.url || blog?.coverImage;
 
   const categoryName = blog?.category || blog?.tags?.[0] || "General";
   const readTimeString = blog?.readTime || "5 min read";

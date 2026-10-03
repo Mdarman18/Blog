@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-7">
         <div className="flex flex-col items-center justify-between gap-4 text-sm text-gray-600 md:flex-row dark:text-white/55">
           <p>
-            &copy; {new Date().getFullYear()} BlogSpace Platform. All rights
+            &copy; {new Date().getFullYear()} Uthsonova Platform. All rights
             reserved.
           </p>
           <div className="mt-4 md:mt-0 flex space-x-6">
