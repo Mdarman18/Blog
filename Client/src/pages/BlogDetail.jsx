@@ -13,7 +13,6 @@ import {
   UserRound,
 } from "lucide-react";
 import StatusBadge from "../components/StatusBadge";
-import ConfirmModal from "../components/ConfirmModal";
 import ErrorMessage from "../components/ErrorMessage";
 import Loader from "../components/Loader";
 import MarkdownContent from "../components/MarkdownContent";
@@ -28,7 +27,6 @@ export default function BlogDetail() {
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null); // { status, message }
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -162,10 +160,10 @@ export default function BlogDetail() {
       : blog.author?.name || "Anonymous";
   const date = blog.createdAt
     ? new Date(blog.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "Unknown date";
   const wordCount = (blog.content || "")
     .trim()
@@ -223,7 +221,7 @@ export default function BlogDetail() {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setIsDeleteModalOpen(true)}
+                  onClick={handleDelete}
                   title="Delete article"
                   aria-label="Delete article"
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:border-white/10 dark:text-gray-300 dark:hover:bg-rose-400/10"
@@ -311,15 +309,6 @@ export default function BlogDetail() {
           </section>
         )}
       </div>
-
-      <ConfirmModal
-        isOpen={isDeleteModalOpen}
-        title="Delete Blog"
-        message="Are you sure you want to delete this blog? This action cannot be undone."
-        onConfirm={handleDelete}
-        onCancel={() => setIsDeleteModalOpen(false)}
-        isLoading={isDeleting}
-      />
     </article>
   );
 }
