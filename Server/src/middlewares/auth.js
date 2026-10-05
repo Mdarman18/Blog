@@ -3,7 +3,12 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
 export async function protect(req, res, next) {
-  const token = req.cookies?.token || (req.headers.authorization && req.headers.authorization.startsWith("Bearer ") ? req.headers.authorization.split(" ")[1] : null);
+  const token =
+    req.cookies?.token ||
+    (req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer ")
+      ? req.headers.authorization.split(" ")[1]
+      : null);
 
   if (!token) {
     return res
@@ -38,7 +43,12 @@ export async function protect(req, res, next) {
 }
 
 export async function optionalAuth(req, res, next) {
-  const token = req.cookies?.token || (req.headers.authorization && req.headers.authorization.startsWith("Bearer ") ? req.headers.authorization.split(" ")[1] : null);
+  const token =
+    req.cookies?.token ||
+    (req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer ")
+      ? req.headers.authorization.split(" ")[1]
+      : null);
 
   if (!token) {
     return next();
@@ -59,4 +69,23 @@ export async function optionalAuth(req, res, next) {
     // Ignore errors for optional auth
   }
   next();
+}
+export function authorize(roleOrRoles, customMessage) {
+  const roles = Array.isArray(roleOrRoles) ? roleOrRoles : [roleOrRoles];
+  return (req, res, next) => {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication required" });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: customMessage || "Forbidden access" 
+      });
+    }
+
+    next();
+  };
 }

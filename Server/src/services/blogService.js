@@ -106,11 +106,12 @@ export const buildDashboardStatsPayload = (blogStats) => ({
   },
 });
 
-export const getDashboardStats = async (userId) => {
+export const getDashboardStats = async (userId = null) => {
+  const filter = userId ? { author: userId } : {};
   const [totalBlogs, publishedBlogs, draftBlogs] = await Promise.all([
-    Blog.countDocuments({ author: userId }),
-    Blog.countDocuments({ author: userId, status: "publish" }),
-    Blog.countDocuments({ author: userId, status: "draft" }),
+    Blog.countDocuments(filter),
+    Blog.countDocuments({ ...filter, status: "publish" }),
+    Blog.countDocuments({ ...filter, status: "draft" }),
   ]);
 
   return buildDashboardStatsPayload({

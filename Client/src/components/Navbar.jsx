@@ -55,12 +55,14 @@ export default function Navbar() {
 
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className="flex items-center gap-1.5 text-sm text-gray-700 transition-colors hover:text-gray-950 dark:text-white/65 dark:hover:text-white"
-                >
-                  <LayoutDashboard className="h-4 w-4" /> Dashboard
-                </Link>
+                {user?.role === "admin" && (
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center gap-1.5 text-sm text-gray-700 transition-colors hover:text-gray-950 dark:text-white/65 dark:hover:text-white"
+                  >
+                    <LayoutDashboard className="h-4 w-4" /> Dashboard
+                  </Link>
+                )}
                 <Link
                   to="/my-posts"
                   className="flex items-center gap-1.5 text-sm text-gray-700 transition-colors hover:text-gray-950 dark:text-white/65 dark:hover:text-white"
@@ -142,13 +144,15 @@ export default function Navbar() {
 
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className="block rounded-lg py-2.5 text-gray-700 transition-colors hover:bg-gray-100 hover:px-3 hover:text-gray-950 dark:text-white/70 dark:hover:bg-white/5 dark:hover:text-white"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
+                {user?.role === "admin" && (
+                  <Link
+                    to="/dashboard"
+                    className="block rounded-lg py-2.5 text-gray-700 transition-colors hover:bg-gray-100 hover:px-3 hover:text-gray-950 dark:text-white/70 dark:hover:bg-white/5 dark:hover:text-white"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 <Link
                   to="/my-posts"
                   className="block rounded-lg py-2.5 text-gray-700 transition-colors hover:bg-gray-100 hover:px-3 hover:text-gray-950 dark:text-white/70 dark:hover:bg-white/5 dark:hover:text-white"

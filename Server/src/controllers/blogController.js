@@ -86,7 +86,9 @@ export const updateBlog = catchAsync(async (req, res, next) => {
     return next(new AppError("Blog not found", 404));
   }
 
-  if (existingBlog.author._id.toString() !== req.user.id) {
+  const isAuthor = existingBlog.author._id.toString() === req.user.id;
+  const isAdmin = req.user.role === "admin";
+  if (!isAuthor && !isAdmin) {
     return next(
       new AppError("You are not authorized to update this blog", 403),
     );

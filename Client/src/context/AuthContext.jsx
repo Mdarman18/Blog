@@ -48,8 +48,8 @@ export const AuthProvider = ({ children }) => {
     return res;
   };
 
-  const register = async (name, email, password) => {
-    const res = await authApi.register({ name, email, password });
+  const register = async (name, email, password, role, adminKey) => {
+    const res = await authApi.register({ name, email, password, role, adminKey });
     const token = normalizeAuthToken(res);
     if (token) {
       localStorage.setItem('token', token);

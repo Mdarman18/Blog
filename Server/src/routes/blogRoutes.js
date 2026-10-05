@@ -9,7 +9,7 @@ import {
   getMyPosts,
 } from "../controllers/blogController.js";
 
-import { protect, optionalAuth } from "../middlewares/auth.js";
+import { protect, optionalAuth, authorize } from "../middlewares/auth.js";
 
 // FIX: update ke liye naya optional validator bhi import karo
 import {
@@ -111,7 +111,7 @@ router.get("/", getAllBlogs);
  *       500:
  *         description: Internal server error
  */
-router.get("/:id", optionalAuth, getBlogById);
+router.get("/:id", getBlogById);
 
 /**
  * @swagger
@@ -259,5 +259,5 @@ router.put(
  *       404:
  *         description: Blog not found
  */
-router.delete("/:id", protect, deleteBlog);
+router.delete("/:id", protect, authorize("admin", "You can not delete this. Only admin can delete."), deleteBlog);
 export default router;

@@ -12,6 +12,7 @@ import {
   Send,
   User,
   UserPlus,
+  Key,
 } from "lucide-react";
 import ErrorMessage from "../components/ErrorMessage";
 import toast from "react-hot-toast";
@@ -20,6 +21,8 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("author");
+  const [adminKey, setAdminKey] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +31,7 @@ export default function Register() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const redirectUrl = localStorage.getItem("redirectUrl") || "/dashboard";
+      const redirectUrl = localStorage.getItem("redirectUrl") || "/";
       localStorage.removeItem("redirectUrl");
       navigate(redirectUrl, { replace: true });
     }
@@ -58,7 +61,7 @@ export default function Register() {
     setError("");
 
     try {
-      await register(name, email, password);
+      await register(name, email, password, role, role === "admin" ? adminKey : undefined);
       toast.success("Account created successfully");
       // Redirect is handled by the useEffect above
     } catch (err) {
@@ -252,6 +255,61 @@ export default function Register() {
                 </button>
               </div>
             </div>
+
+            <div className="flex flex-col gap-3 mt-2">
+              <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Role <span className="text-red-600">*</span>
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="author"
+                    checked={role === "author"}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="h-4 w-4 text-primary focus:ring-primary dark:border-white/20 dark:bg-gray-900"
+                  />
+                  Author
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="admin"
+                    checked={role === "admin"}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="h-4 w-4 text-primary focus:ring-primary dark:border-white/20 dark:bg-gray-900"
+                  />
+                  Admin
+                </label>
+              </div>
+            </div>
+
+            {role === "admin" && (
+              <div className="flex flex-col gap-1.5 animate-fade-in">
+                <label
+                  htmlFor="adminKey"
+                  className="text-sm font-semibold text-gray-800 dark:text-gray-200"
+                >
+                  Admin Key <span className="text-red-600">*</span>
+                </label>
+                <div className="relative">
+                  <Key className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                  <input
+                    id="adminKey"
+                    name="adminKey"
+                    type="password"
+                    required
+                    className="h-11 w-full rounded-lg bg-gray-50 pl-10 pr-4 text-sm text-gray-900 shadow-[inset_0_0_0_1px_rgba(119,117,135,0.2)] transition-shadow placeholder:text-gray-400 focus:bg-white focus:outline-none focus:shadow-[inset_0_0_0_2px_var(--color-primary)] dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:bg-gray-950"
+                    placeholder="Enter the secret admin key"
+                    value={adminKey}
+                    onChange={(e) => setAdminKey(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
 
             <button
               type="submit"

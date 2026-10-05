@@ -8,15 +8,17 @@ import {
   getBlogId,
   normalizeBlogStatus,
 } from "../api/normalize";
-import { FileText, CheckCircle, Clock, Edit, Trash2, Eye } from "lucide-react";
+import { FileText, CheckCircle, Clock, Edit, Trash2, Eye, XCircle } from "lucide-react";
 import StatusBadge from "../components/StatusBadge";
 import Pagination from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
 import Loader from "../components/Loader";
 import ErrorMessage from "../components/ErrorMessage";
 import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [stats, setStats] = useState({ total: 0, published: 0, draft: 0 });
   const [blogs, setBlogs] = useState([]);
 
@@ -118,6 +120,13 @@ export default function Dashboard() {
   const handleDelete = async (blog) => {
     if (!blog || isDeleting) return;
 
+    if (user?.role !== "admin") {
+      toast.error("You can not delete. Only admin can delete.");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete this blog?")) return;
+
     const id = getBlogId(blog);
     if (!id) {
       toast.error("Cannot delete blog: ID is missing.");
@@ -140,16 +149,20 @@ export default function Dashboard() {
     } catch (err) {
       const status = err.response?.status;
       const backendMessage = err.response?.data?.message;
+      
+      if (status === 403) {
+        toast.error("You can not delete. Only admin can delete.");
+        return;
+      }
+
       const message =
         status === 401
           ? backendMessage || "Please sign in to delete this blog."
-          : status === 403
-            ? backendMessage || "You are not allowed to delete this blog."
-            : status === 404
-              ? backendMessage || "This blog no longer exists."
-              : status === 400
-                ? backendMessage || "The blog ID is invalid."
-                : backendMessage || err.message || "Failed to delete blog.";
+          : status === 404
+            ? backendMessage || "This blog no longer exists."
+            : status === 400
+              ? backendMessage || "The blog ID is invalid."
+              : backendMessage || err.message || "Failed to delete blog.";
       toast.error(message);
     } finally {
       setIsDeleting(false);
@@ -344,13 +357,25 @@ export default function Dashboard() {
                         >
                           <Edit className="h-4 w-4" />
                         </Link>
-                        <button
-                          onClick={() => handleDelete(blog)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded dark:text-gray-500 dark:hover:text-red-400"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {user?.role === "admin" ? (
+                          <button
+                            onClick={() => handleDelete(blog)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded dark:text-gray-500 dark:hover:text-red-400"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              toast.error("You can not delete. Only admin can delete.");
+                            }}
+                            className="p-1.5 text-gray-300 cursor-not-allowed transition-colors rounded dark:text-gray-600"
+                            title="You can not delete. Only admin can delete."
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

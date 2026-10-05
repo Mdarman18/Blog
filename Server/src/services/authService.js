@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import User from "../models/user.js";
@@ -10,17 +11,43 @@ const signToken = (id) => {
   });
 };
 
-export const registerUser = async ({ name, email, password }) => {
+// timing-safe compare
+const isValidAdminKey = (input) => {
+  if (!env.ADMIN_SECRET_KEY || typeof input !== "string") return false;
+
+  const a = Buffer.from(input);
+  const b = Buffer.from(env.ADMIN_SECRET_KEY);
+
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+
+export const registerUser = async ({
+  name,
+  email,
+  password,
+  role,
+  adminKey,
+}) => {
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new AppError("Email already in use", 400);
+  }
+
+  // default author, admin sirf sahi key pe
+  let finalRole = "author";
+
+  if (role === "admin") {
+    if (!isValidAdminKey(adminKey)) {
+      throw new AppError("Invalid admin key", 403);
+    }
+    finalRole = "admin";
   }
 
   const newUser = await User.create({
     name,
     email,
     password,
-    role: "user",
+    role: finalRole,
   });
 
   const token = signToken(newUser._id);

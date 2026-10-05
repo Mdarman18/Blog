@@ -22,7 +22,7 @@ const router = Router();
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Register a new user
+ *     summary: Register a new user (author by default, admin needs secret key)
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -43,11 +43,37 @@ const router = Router();
  *               password:
  *                 type: string
  *                 minLength: 6
+ *               role:
+ *                 type: string
+ *                 enum: [author, admin]
+ *                 default: author
+ *                 description: Optional. Defaults to author.
+ *               adminKey:
+ *                 type: string
+ *                 description: Required only when role is admin. Must match ADMIN_SECRET_KEY on server.
+ *           examples:
+ *             author:
+ *               summary: Register as author
+ *               value:
+ *                 name: Arman
+ *                 email: author@test.com
+ *                 password: "123456"
+ *                 role: author
+ *             admin:
+ *               summary: Register as admin (key required)
+ *               value:
+ *                 name: Admin User
+ *                 email: admin@test.com
+ *                 password: "123456"
+ *                 role: admin
+ *                 adminKey: your_admin_secret_key
  *     responses:
  *       201:
  *         description: User registered successfully
  *       400:
  *         description: Invalid input or email already exists
+ *       403:
+ *         description: Invalid admin key
  */
 router.post("/register", registerValidation, validate, register);
 

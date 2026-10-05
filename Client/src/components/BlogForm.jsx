@@ -19,7 +19,7 @@ export default function BlogForm({
     content: initialData?.content || "",
     conclusion: initialData?.conclusion || "",
     tags: initialData?.tags || [],
-    status: initialData?.status || "Draft",
+    status: initialData?.status || "draft",
   });
   const [errors, setErrors] = useState({});
   const [titleTab, setTitleTab] = useState("write"); // CHANGED: title markdown tab

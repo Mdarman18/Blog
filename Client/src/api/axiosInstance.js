@@ -49,7 +49,8 @@ axiosInstance.interceptors.response.use(
         window.location.href = "/login";
       }
     } else if (status === 403) {
-      toast.error("You don't have permission to do this");
+      const backendMessage = error.response?.data?.message;
+      toast.error(backendMessage || "You don't have permission to do this");
     } else if (status === 500) {
       // toast.error("Something went wrong, try again");
     }

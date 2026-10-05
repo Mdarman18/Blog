@@ -35,9 +35,10 @@ function App() {
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/blogs/:id" element={<BlogDetail />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+
+                  <Route path="/blogs/:id" element={<BlogDetail />} />
 
                   {/* Protected Routes */}
                   <Route element={<ProtectedRoute />}>

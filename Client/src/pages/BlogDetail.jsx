@@ -13,6 +13,7 @@ import {
   Share2,
   Trash2,
   UserRound,
+  XCircle,
 } from "lucide-react";
 import StatusBadge from "../components/StatusBadge";
 import ErrorMessage from "../components/ErrorMessage";
@@ -60,6 +61,7 @@ export default function BlogDetail() {
 
   const handleDelete = async () => {
     if (isDeleting) return;
+    if (!window.confirm("Are you sure you want to delete this blog?")) return;
     setIsDeleting(true);
     try {
       await blogApi.deleteBlog(blog._id || id);
@@ -68,16 +70,18 @@ export default function BlogDetail() {
     } catch (err) {
       const status = err.response?.status;
       const backendMessage = err.response?.data?.message;
+      if (status === 403) {
+        toast.error("You can not delete. Only admin can delete.");
+        return;
+      }
       const message =
         status === 401
           ? backendMessage || "Please sign in to delete this blog."
-          : status === 403
-            ? backendMessage || "You are not allowed to delete this blog."
-            : status === 404
-              ? backendMessage || "This blog no longer exists."
-              : status === 400
-                ? backendMessage || "The blog ID is invalid."
-                : backendMessage || err.message || "Failed to delete blog.";
+          : status === 404
+            ? backendMessage || "This blog no longer exists."
+            : status === 400
+              ? backendMessage || "The blog ID is invalid."
+              : backendMessage || err.message || "Failed to delete blog.";
       toast.error(message);
     } finally {
       setIsDeleting(false);
@@ -156,7 +160,13 @@ export default function BlogDetail() {
       ? blog.author?._id || blog.author?.id
       : blog.author;
   const isAuthor = userId && authorId && String(userId) === String(authorId);
-  const canDelete = isAuthor || user?.role === "admin";
+  const isAdmin = user?.role === "admin";
+  const canEdit = isAuthor || isAdmin;
+
+  const handleAuthorDeleteClick = () => {
+    toast.error("You can not delete. Only admin can delete.");
+  };
+
   const authorName =
     typeof blog.author === "string"
       ? blog.author
@@ -229,7 +239,7 @@ export default function BlogDetail() {
             >
               <Share2 className="h-4 w-4" />
             </button>
-            {canDelete && (
+            {canEdit && (
               <>
                 <Link
                   to={`/blogs/${id}/edit`}
@@ -239,15 +249,27 @@ export default function BlogDetail() {
                 >
                   <Edit className="h-4 w-4" />
                 </Link>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  title="Delete article"
-                  aria-label="Delete article"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:border-white/10 dark:text-gray-300 dark:hover:bg-rose-400/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    title="Delete article"
+                    aria-label="Delete article"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:border-white/10 dark:text-gray-300 dark:hover:bg-rose-400/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleAuthorDeleteClick}
+                    title="You can not delete. Only admin can delete."
+                    aria-label="Cannot delete article"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-400 opacity-50 cursor-not-allowed bg-gray-50 dark:border-white/10 dark:text-gray-500 dark:bg-white/5"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </button>
+                )}
               </>
             )}
           </div>

@@ -15,7 +15,15 @@ export const clearCookieOptions = {
 };
 
 export const register = catchAsync(async (req, res) => {
-  const { user, token } = await authService.registerUser(req.body);
+  const { name, email, password, role, adminKey } = req.body;
+
+  const { user, token } = await authService.registerUser({
+    name,
+    email,
+    password,
+    role,
+    adminKey,
+  });
 
   res.cookie("token", token, cookieOptions);
 

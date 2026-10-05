@@ -59,8 +59,10 @@ import * as blogService from "../services/blogService.js";
 export const getAllAdminBlogs = catchAsync(async (req, res) => {
   const filter = {
     ...blogService.buildAdminBlogFilter(req.query),
-    author: req.user._id,
   };
+  if (req.user.role !== "admin") {
+    filter.author = req.user._id;
+  }
   const { page, limit } = req.query;
   const { blogs, pagination } = await blogService.getAllBlogs(filter, {
     page,
@@ -92,7 +94,8 @@ export const getAllAdminBlogs = catchAsync(async (req, res) => {
  *         description: Internal server error
  */
 export const getDashboardStats = catchAsync(async (req, res) => {
-  const stats = await blogService.getDashboardStats(req.user._id);
+  const userId = req.user.role === "admin" ? null : req.user._id;
+  const stats = await blogService.getDashboardStats(userId);
 
   res.status(200).json({
     success: true,
