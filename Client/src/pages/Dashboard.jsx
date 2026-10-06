@@ -96,8 +96,9 @@ export default function Dashboard() {
 
     // Optimistic update
     const previousBlogs = [...blogs];
+    const currentStatus = normalizeBlogStatus(blog.status);
     const newStatus =
-      normalizeBlogStatus(blog.status) === "publish" ? "draft" : "publish";
+      (currentStatus === "publish" || currentStatus === "scheduled") ? "draft" : "publish";
 
     setBlogs(
       blogs.map((b) => (getBlogId(b) === id ? { ...b, status: newStatus } : b)),
@@ -259,6 +260,7 @@ export default function Dashboard() {
             >
               <option value="">All Statuses</option>
               <option value="publish">Published</option>
+              <option value="scheduled">Scheduled</option>
               <option value="draft">Draft</option>
             </select>
             <div className="w-full sm:w-64">

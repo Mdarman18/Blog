@@ -14,30 +14,28 @@ router.post("/publish-daily", async (req, res) => {
       });
     }
 
-    // Find the oldest draft and update it to publish
-    const publishedBlog = await Blog.findOneAndUpdate(
-      { status: "draft" },
-      { $set: { status: "publish" } },
-      { sort: { createdAt: 1 }, new: true }
+    const now = new Date();
+    // Find all scheduled blogs whose time has arrived and update them to publish
+    const result = await Blog.updateMany(
+      { status: "scheduled", scheduledAt: { $lte: now } },
+      { $set: { status: "publish" } }
     );
 
-    // If no drafts found
-    if (!publishedBlog) {
+    if (result.modifiedCount === 0) {
       return res.status(200).json({ 
         success: true, 
         published: 0, 
-        message: "No drafts found to publish" 
+        message: "No scheduled blogs found to publish at this time" 
       });
     }
 
     return res.status(200).json({
       success: true,
-      published: 1,
-      blogId: publishedBlog._id,
-      title: publishedBlog.title,
+      published: result.modifiedCount,
+      message: `Published ${result.modifiedCount} scheduled blogs`
     });
   } catch (error) {
-    console.error("Daily publish cron error:", error);
+    console.error("Schedule publish cron error:", error);
     return res.status(500).json({ 
       success: false, 
       message: "Internal server error during cron job" 

@@ -1,7 +1,9 @@
 export const normalizeBlogStatus = (status) => {
   const normalized =
     typeof status === "string" ? status.trim().toLowerCase() : "";
-  return normalized === "published" ? "publish" : normalized;
+  if (normalized === "published") return "publish";
+  if (normalized === "scheduled") return "scheduled";
+  return normalized;
 };
 
 // FIX: axios response ko unwrap karo, aur data.data object ke andar se array dhoondo

@@ -27,6 +27,16 @@ export default function BlogForm({
   const [conclusionTab, setConclusionTab] = useState("write");
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const isInitiallyScheduled = initialData?.status === "scheduled";
+  const initialDateObj = isInitiallyScheduled && initialData?.scheduledAt ? new Date(initialData.scheduledAt) : null;
+  const initialTimeStr = initialDateObj ? `${String(initialDateObj.getHours()).padStart(2, '0')}:${String(initialDateObj.getMinutes()).padStart(2, '0')}` : "";
+  const initialDateStr = initialDateObj ? `${initialDateObj.getFullYear()}-${String(initialDateObj.getMonth()+1).padStart(2, '0')}-${String(initialDateObj.getDate()).padStart(2, '0')}` : "";
+
+  const [scheduleMode, setScheduleMode] = useState(isInitiallyScheduled ? "schedule" : "now");
+  const [scheduledDate, setScheduledDate] = useState(initialDateStr);
+  const [scheduledHour, setScheduledHour] = useState(initialTimeStr ? initialTimeStr.split(":")[0] : "09");
+  const [scheduledMinute, setScheduledMinute] = useState(initialTimeStr ? initialTimeStr.split(":")[1] : "00");
+
   const existingImages = initialData?.images || (initialData?.image ? [initialData.image] : []);
 
   const [imageFiles, setImageFiles] = useState([]);
@@ -87,13 +97,57 @@ export default function BlogForm({
     if (!formData.content.trim()) newErrors.content = "Content is required";
     if (!formData.conclusion.trim())
       newErrors.conclusion = "Conclusion is required";
+
+    if (scheduleMode === "schedule") {
+      const scheduledTime = `${scheduledHour}:${scheduledMinute}`;
+      if (!scheduledDate) newErrors.scheduledDate = "Please select a date.";
+      if (!scheduledHour || !scheduledMinute) newErrors.scheduledTime = "Please select a time.";
+      
+      if (scheduledHour && scheduledMinute) {
+        const minutes = Number(scheduledMinute);
+        if (minutes % 15 !== 0) {
+          newErrors.scheduledTime = "Time must be in 15-minute intervals.";
+        }
+      }
+
+      if (scheduledDate && scheduledHour && scheduledMinute && !newErrors.scheduledTime) {
+        const selectedDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
+        const now = new Date();
+        
+        // Remove seconds and milliseconds for comparison
+        now.setSeconds(0, 0);
+
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        
+        if (scheduledDate < todayStr) {
+          newErrors.scheduledDate = "Scheduled date cannot be in the past.";
+        } else if (scheduledDate === todayStr && selectedDateTime < now) {
+          newErrors.scheduledTime = "Please select a future time.";
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
-      onSubmit(formData, imageFiles); 
+      const finalData = { ...formData };
+      if (scheduleMode === "schedule") {
+        const scheduledTime = `${scheduledHour}:${scheduledMinute}`;
+        finalData.status = "scheduled";
+        finalData.scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+        finalData.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } else {
+        // If publish now is selected, and status is draft, keep draft. If publish, keep publish.
+        // But if they switch from schedule back to publish now, we need to handle that.
+        // In publish now mode, the status is determined by the dropdown (draft or publish).
+        if (finalData.status === "scheduled") finalData.status = "publish"; // fallback
+        finalData.scheduledAt = null;
+        finalData.timezone = null;
+      }
+      onSubmit(finalData, imageFiles); 
     }
   };
 
@@ -422,23 +476,118 @@ export default function BlogForm({
       </div>
 
       <div>
-        <label
-          htmlFor="status"
-          className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
-        >
-          Status
+        <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
+          Publishing Options
         </label>
-        <select
-          id="status"
-          value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-          className="w-full bg-white text-gray-900 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-        >
-          {/* FIX: Use exact case-sensitive Status values */}
-          <option value="draft">Draft</option>
-          <option value="publish">Published</option>
-        </select>
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+            <input
+              type="radio"
+              name="scheduleMode"
+              value="now"
+              checked={scheduleMode === "now"}
+              onChange={() => {
+                setScheduleMode("now");
+                if (formData.status === "scheduled") setFormData({ ...formData, status: "publish" });
+              }}
+              className="text-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600"
+            />
+            Publish Now (or Draft)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+            <input
+              type="radio"
+              name="scheduleMode"
+              value="schedule"
+              checked={scheduleMode === "schedule"}
+              onChange={() => {
+                setScheduleMode("schedule");
+                setFormData({ ...formData, status: "scheduled" });
+              }}
+              className="text-primary focus:ring-primary dark:bg-gray-800 dark:border-gray-600"
+            />
+            Schedule for later
+          </label>
+        </div>
+
+        {scheduleMode === "schedule" && (
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-md dark:bg-gray-800/50 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="scheduledDate" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                Schedule Date <span className="text-red-700 dark:text-red-400">*</span>
+              </label>
+              <input
+                id="scheduledDate"
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className={`w-full bg-white text-gray-900 px-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 ${
+                  errors.scheduledDate ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
+                }`}
+              />
+              {errors.scheduledDate && (
+                <p className="mt-1 text-sm text-red-700 dark:text-red-400">{errors.scheduledDate}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                Schedule Time <span className="text-red-700 dark:text-red-400">*</span>
+              </label>
+              <div className="flex gap-2 items-center">
+                <select
+                  value={scheduledHour}
+                  onChange={(e) => setScheduledHour(e.target.value)}
+                  className={`flex-1 bg-white text-gray-900 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 ${
+                    errors.scheduledTime ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
+                  }`}
+                >
+                  {Array.from({ length: 24 }).map((_, i) => {
+                    const h = String(i).padStart(2, "0");
+                    return <option key={h} value={h}>{h}</option>;
+                  })}
+                </select>
+                <span className="text-gray-900 dark:text-gray-100 font-bold">:</span>
+                <select
+                  value={scheduledMinute}
+                  onChange={(e) => setScheduledMinute(e.target.value)}
+                  className={`flex-1 bg-white text-gray-900 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 ${
+                    errors.scheduledTime ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
+                  }`}
+                >
+                  <option value="00">00</option>
+                  <option value="15">15</option>
+                  <option value="30">30</option>
+                  <option value="45">45</option>
+                </select>
+              </div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Time must be in 15-minute intervals</p>
+              {errors.scheduledTime && (
+                <p className="mt-1 text-sm text-red-700 dark:text-red-400">{errors.scheduledTime}</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {scheduleMode === "now" && (
+        <div>
+          <label
+            htmlFor="status"
+            className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
+          >
+            Status
+          </label>
+          <select
+            id="status"
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+            className="w-full bg-white text-gray-900 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          >
+            <option value="draft">Draft</option>
+            <option value="publish">Published</option>
+          </select>
+        </div>
+      )}
 
       <div className="flex gap-4 pt-4">
         <button

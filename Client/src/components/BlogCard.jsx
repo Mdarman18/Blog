@@ -38,8 +38,12 @@ export default function BlogCard({
   }
 
   // Logic processing from the first component
-  const date = blog?.createdAt
-    ? new Date(blog.createdAt).toLocaleDateString()
+  const isScheduled = blog?.status === "scheduled";
+  const dateObj = isScheduled && blog?.scheduledAt ? new Date(blog.scheduledAt) : (blog?.createdAt ? new Date(blog.createdAt) : null);
+  const date = dateObj
+    ? isScheduled
+      ? `${dateObj.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} · ${dateObj.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`
+      : dateObj.toLocaleDateString()
     : "Unknown date";
 
   const authorName = blog?.author?.name || "Anonymous";

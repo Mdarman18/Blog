@@ -43,6 +43,7 @@ export const buildAdminBlogFilter = ({ search, tag, status } = {}) => {
   const normalizedStatus =
     typeof status === "string" ? status.trim().toLowerCase() : "";
   if (normalizedStatus === "draft") filter.status = "draft";
+  if (normalizedStatus === "scheduled") filter.status = "scheduled";
   if (normalizedStatus === "publish" || normalizedStatus === "published") {
     filter.status = "publish";
   }

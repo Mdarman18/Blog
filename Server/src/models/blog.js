@@ -40,9 +40,19 @@ const blogSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["draft", "publish"],
+      enum: ["draft", "scheduled", "publish"],
       default: "draft",
       required: true,
+    },
+
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
+
+    timezone: {
+      type: String,
+      default: null,
     },
 
     author: {
