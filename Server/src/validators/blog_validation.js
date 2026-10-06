@@ -13,8 +13,8 @@ export const blogValidation = [
   body("conclusion").trim().notEmpty().withMessage("Conclusion is required"),
   body("status")
     .optional()
-    .isIn(["draft", "publish"])
-    .withMessage("Status must be either draft or publish"),
+    .isIn(["draft", "publish", "scheduled"])
+    .withMessage("Status must be draft, publish, or scheduled"),
 ];
 
 // FIX: UPDATE ke liye: koi field required nahi (sab optional)

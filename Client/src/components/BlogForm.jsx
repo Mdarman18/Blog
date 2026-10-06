@@ -30,7 +30,7 @@ export default function BlogForm({
   const isInitiallyScheduled = initialData?.status === "scheduled";
   const initialDateObj = isInitiallyScheduled && initialData?.scheduledAt ? new Date(initialData.scheduledAt) : null;
   const initialTimeStr = initialDateObj ? `${String(initialDateObj.getHours()).padStart(2, '0')}:${String(initialDateObj.getMinutes()).padStart(2, '0')}` : "";
-  const initialDateStr = initialDateObj ? `${initialDateObj.getFullYear()}-${String(initialDateObj.getMonth()+1).padStart(2, '0')}-${String(initialDateObj.getDate()).padStart(2, '0')}` : "";
+  const initialDateStr = initialDateObj ? `${initialDateObj.getFullYear()}-${String(initialDateObj.getMonth() + 1).padStart(2, '0')}-${String(initialDateObj.getDate()).padStart(2, '0')}` : "";
 
   const [scheduleMode, setScheduleMode] = useState(isInitiallyScheduled ? "schedule" : "now");
   const [scheduledDate, setScheduledDate] = useState(initialDateStr);
@@ -76,9 +76,9 @@ export default function BlogForm({
     }
 
     setImageFiles((prev) => [...prev, ...validFiles]);
-    
+
     // Clear input so same file can be selected again if removed
-    e.target.value = null; 
+    e.target.value = null;
   };
 
   const removeImage = (indexToRemove) => {
@@ -102,7 +102,7 @@ export default function BlogForm({
       const scheduledTime = `${scheduledHour}:${scheduledMinute}`;
       if (!scheduledDate) newErrors.scheduledDate = "Please select a date.";
       if (!scheduledHour || !scheduledMinute) newErrors.scheduledTime = "Please select a time.";
-      
+
       if (scheduledHour && scheduledMinute) {
         const minutes = Number(scheduledMinute);
         if (minutes % 15 !== 0) {
@@ -111,18 +111,20 @@ export default function BlogForm({
       }
 
       if (scheduledDate && scheduledHour && scheduledMinute && !newErrors.scheduledTime) {
-        const selectedDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
         const now = new Date();
-        
-        // Remove seconds and milliseconds for comparison
-        now.setSeconds(0, 0);
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        
         if (scheduledDate < todayStr) {
           newErrors.scheduledDate = "Scheduled date cannot be in the past.";
-        } else if (scheduledDate === todayStr && selectedDateTime < now) {
-          newErrors.scheduledTime = "Please select a future time.";
+        } else if (scheduledDate === todayStr) {
+          const currentHour = now.getHours();
+          const currentMinute = now.getMinutes();
+          const selectedHourNum = Number(scheduledHour);
+          const selectedMinuteNum = Number(scheduledMinute);
+
+          if (selectedHourNum < currentHour || (selectedHourNum === currentHour && selectedMinuteNum <= currentMinute)) {
+            newErrors.scheduledTime = "Please select a future time.";
+          }
         }
       }
     }
@@ -147,7 +149,7 @@ export default function BlogForm({
         finalData.scheduledAt = null;
         finalData.timezone = null;
       }
-      onSubmit(finalData, imageFiles); 
+      onSubmit(finalData, imageFiles);
     }
   };
 
@@ -156,18 +158,18 @@ export default function BlogForm({
       toast.error("Please enter a title first to generate content.");
       return;
     }
-    
+
     if (formData.content.trim() && !window.confirm("This will overwrite your existing content. Do you want to proceed?")) {
       return;
     }
 
     setIsGenerating(true);
     const toastId = toast.loading("Generating content with AI...");
-    
+
     try {
       const response = await blogApi.generateBlog(formData.title);
       const generatedContent = response.data?.data?.content || "";
-      
+
       setFormData(prev => ({ ...prev, content: generatedContent }));
       toast.success("Content generated successfully!", { id: toastId });
       setContentTab("write");
@@ -217,11 +219,10 @@ export default function BlogForm({
               role="tab"
               aria-selected={titleTab === tab}
               onClick={() => setTitleTab(tab)}
-              className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
-                titleTab === tab
-                  ? "border-primary text-primary"
-                  : "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
-              }`}
+              className={`rounded-md border px-3 py-1.5 text-sm font-medium ${titleTab === tab
+                ? "border-primary text-primary"
+                : "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
+                }`}
             >
               {label}
             </button>
@@ -235,11 +236,10 @@ export default function BlogForm({
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            className={`w-full bg-white text-gray-900 placeholder-gray-500 px-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 ${
-              errors.title
-                ? "border-red-500 dark:border-red-400"
-                : "border-gray-300 dark:border-gray-600"
-            }`}
+            className={`w-full bg-white text-gray-900 placeholder-gray-500 px-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 ${errors.title
+              ? "border-red-500 dark:border-red-400"
+              : "border-gray-300 dark:border-gray-600"
+              }`}
             placeholder="Blog Title (Markdown supported)"
           />
         ) : (
@@ -276,11 +276,10 @@ export default function BlogForm({
               role="tab"
               aria-selected={contentTab === tab}
               onClick={() => setContentTab(tab)}
-              className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
-                contentTab === tab
-                  ? "border-primary text-primary"
-                  : "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
-              }`}
+              className={`rounded-md border px-3 py-1.5 text-sm font-medium ${contentTab === tab
+                ? "border-primary text-primary"
+                : "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
+                }`}
             >
               {label}
             </button>
@@ -294,11 +293,10 @@ export default function BlogForm({
             onChange={(e) =>
               setFormData({ ...formData, content: e.target.value })
             }
-            className={`w-full bg-white text-gray-900 placeholder-gray-500 px-4 py-2 border rounded-md font-mono focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 ${
-              errors.content
-                ? "border-red-500 dark:border-red-400"
-                : "border-gray-300 dark:border-gray-600"
-            }`}
+            className={`w-full bg-white text-gray-900 placeholder-gray-500 px-4 py-2 border rounded-md font-mono focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 ${errors.content
+              ? "border-red-500 dark:border-red-400"
+              : "border-gray-300 dark:border-gray-600"
+              }`}
             placeholder="Write in Markdown..."
           ></textarea>
         ) : (
@@ -335,11 +333,10 @@ export default function BlogForm({
               role="tab"
               aria-selected={conclusionTab === tab}
               onClick={() => setConclusionTab(tab)}
-              className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
-                conclusionTab === tab
-                  ? "border-primary text-primary"
-                  : "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
-              }`}
+              className={`rounded-md border px-3 py-1.5 text-sm font-medium ${conclusionTab === tab
+                ? "border-primary text-primary"
+                : "border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300"
+                }`}
             >
               {label}
             </button>
@@ -353,11 +350,10 @@ export default function BlogForm({
             onChange={(e) =>
               setFormData({ ...formData, conclusion: e.target.value })
             }
-            className={`w-full bg-white text-gray-900 placeholder-gray-500 px-4 py-2 border rounded-md font-mono focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 ${
-              errors.conclusion
-                ? "border-red-500 dark:border-red-400"
-                : "border-gray-300 dark:border-gray-600"
-            }`}
+            className={`w-full bg-white text-gray-900 placeholder-gray-500 px-4 py-2 border rounded-md font-mono focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 ${errors.conclusion
+              ? "border-red-500 dark:border-red-400"
+              : "border-gray-300 dark:border-gray-600"
+              }`}
             placeholder="Write in Markdown..."
           ></textarea>
         ) : (
@@ -521,9 +517,8 @@ export default function BlogForm({
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className={`w-full bg-white text-gray-900 px-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 ${
-                  errors.scheduledDate ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
-                }`}
+                className={`w-full bg-white text-gray-900 px-4 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 ${errors.scheduledDate ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
+                  }`}
               />
               {errors.scheduledDate && (
                 <p className="mt-1 text-sm text-red-700 dark:text-red-400">{errors.scheduledDate}</p>
@@ -537,22 +532,23 @@ export default function BlogForm({
                 <select
                   value={scheduledHour}
                   onChange={(e) => setScheduledHour(e.target.value)}
-                  className={`flex-1 bg-white text-gray-900 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 ${
-                    errors.scheduledTime ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
-                  }`}
+                  className={`flex-1 bg-white text-gray-900 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 ${errors.scheduledTime ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
+                    }`}
                 >
                   {Array.from({ length: 24 }).map((_, i) => {
                     const h = String(i).padStart(2, "0");
-                    return <option key={h} value={h}>{h}</option>;
+                    const ampm = i >= 12 ? "PM" : "AM";
+                    const displayHour = i === 0 ? 12 : i > 12 ? i - 12 : i;
+                    const label = `${h} (${displayHour} ${ampm})`;
+                    return <option key={h} value={h}>{label}</option>;
                   })}
                 </select>
                 <span className="text-gray-900 dark:text-gray-100 font-bold">:</span>
                 <select
                   value={scheduledMinute}
                   onChange={(e) => setScheduledMinute(e.target.value)}
-                  className={`flex-1 bg-white text-gray-900 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 ${
-                    errors.scheduledTime ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
-                  }`}
+                  className={`flex-1 bg-white text-gray-900 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-gray-100 ${errors.scheduledTime ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"
+                    }`}
                 >
                   <option value="00">00</option>
                   <option value="15">15</option>
