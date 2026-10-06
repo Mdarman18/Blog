@@ -3,6 +3,7 @@ import authRoutes from "./authRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import blogRoutes from "./blogRoutes.js";
 import aiRoutes from "./aiRoutes.js";
+import cronRoutes from "./cronRoutes.js";
 const router = Router();
 
 // ── Health check ──────────────────────────────────────────────────────────────
@@ -20,5 +21,8 @@ router.use("/blogs", blogRoutes);
 
 // ── AI ────────────────────────────────────────────────────────────────────────
 router.use("/ai", aiRoutes);
+
+// ── Cron Jobs ─────────────────────────────────────────────────────────────────
+router.use("/cron", cronRoutes);
 
 export default router;

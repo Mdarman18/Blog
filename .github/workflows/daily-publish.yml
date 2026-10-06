@@ -1,0 +1,62 @@
+name: "Daily Blog Publish"
+
+# IST vs UTC Conversion:
+# 9:00 AM IST (Indian Standard Time) is 3:30 AM UTC.
+# GitHub uses UTC for cron scheduling, hence "30 3 * * *".
+# Note: GitHub scheduled workflows can sometimes run 5-15 minutes late 
+# depending on GitHub's server load.
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  # Allows triggering the workflow manually from the Actions tab for testing
+  workflow_dispatch:
+
+# Least privilege principle: We don't need repository write access,
+# and we aren't even checking out the code.
+permissions:
+  contents: read
+
+# Concurrency group ensures that if multiple triggers happen closely, 
+# they don't overlap and cause duplicate blog publications.
+concurrency:
+  group: "daily-publish-cron"
+  cancel-in-progress: false
+
+jobs:
+  publish-job:
+    runs-on: ubuntu-latest
+    
+    # We don't need the `actions/checkout` step because we are only making an HTTP request
+    
+    steps:
+      - name: Hit Vercel Publish Endpoint
+        # Pass secrets as environment variables to prevent them from being 
+        # accidentally leaked in GitHub Actions logs (better security practice than inline).
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "Triggering Vercel backend at $API_URL/api/cron/publish-daily..."
+          
+          # curl command with robustness:
+          # -sS: Silent but shows errors if they occur
+          # --fail-with-body: Fails the step on HTTP error (like 401/500) but still prints the error body
+          # --max-time 30: Ensures the request doesn't hang indefinitely (timeout 30s)
+          # --retry 3 --retry-delay 10: Retries 3 times waiting 10s between attempts. Crucial for handling Vercel cold starts.
+          RESPONSE=$(curl -X POST "$API_URL/api/cron/publish-daily" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -sS --fail-with-body --max-time 30 \
+            --retry 3 --retry-delay 10)
+          
+          # Print the raw JSON response
+          echo "Raw Response: $RESPONSE"
+          
+          # Parse and print friendly status
+          PUBLISHED=$(echo "$RESPONSE" | grep -o '"published": *[0-9]*' | grep -o '[0-9]*')
+          
+          if [ "$PUBLISHED" = "0" ]; then
+            echo "Status: Koi draft nahi mila publish karne ke liye."
+          elif [ "$PUBLISHED" = "1" ]; then
+            echo "Status: Ek draft successfully publish ho gaya!"
+          fi

@@ -276,6 +276,9 @@ export default function Dashboard() {
             <thead className="bg-gray-50 text-gray-600 dark:bg-gray-900 dark:text-gray-300">
               <tr>
                 <th className="px-6 py-4 font-medium">Title</th>
+                {user?.role === "admin" && (
+                  <th className="px-6 py-4 font-medium">Author</th>
+                )}
                 <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium">Tags</th>
                 <th className="px-6 py-4 font-medium">Date</th>
@@ -285,14 +288,14 @@ export default function Dashboard() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center">
+                  <td colSpan={user?.role === "admin" ? 6 : 5} className="px-6 py-12 text-center">
                     <Loader />
                   </td>
                 </tr>
               ) : blogs.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan={user?.role === "admin" ? 6 : 5}
                     className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
                     No blogs found matching your criteria.
@@ -307,6 +310,11 @@ export default function Dashboard() {
                     <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-62.5 dark:text-gray-100">
                       {blog.title}
                     </td>
+                    {user?.role === "admin" && (
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                        {blog.author?.name || "Unknown"}
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <button
                         onClick={() => handleToggleStatus(blog)}
