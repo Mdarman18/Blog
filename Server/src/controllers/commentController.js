@@ -17,8 +17,8 @@ export const getComments = catchAsync(async (req, res, next) => {
 
 export const addComment = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const { text } = req.body;
-  const userId = req.user.id;
+  const { text, guestName, guestEmail } = req.body;
+  const userId = req.user?.id || null;
 
   if (!text || text.trim() === "") {
     return next(new AppError("Comment text is required", 400));
@@ -30,6 +30,8 @@ export const addComment = catchAsync(async (req, res, next) => {
   const comment = await Comment.create({
     blogId: id,
     userId,
+    guestName: guestName ? guestName.trim() : (userId ? "" : "Guest Reader"),
+    guestEmail: guestEmail ? guestEmail.trim() : "",
     text: text.trim(),
   });
 
@@ -48,8 +50,8 @@ export const deleteComment = catchAsync(async (req, res, next) => {
   const comment = await Comment.findById(cId);
   if (!comment) return next(new AppError("Comment not found", 404));
 
-  const isOwner = comment.userId.toString() === req.user.id.toString();
-  const isAdmin = req.user.role === "admin";
+  const isOwner = comment.userId && req.user?.id && comment.userId.toString() === req.user.id.toString();
+  const isAdmin = req.user?.role === "admin";
 
   if (!isOwner && !isAdmin) {
     return next(new AppError("You are not authorized to delete this comment", 403));

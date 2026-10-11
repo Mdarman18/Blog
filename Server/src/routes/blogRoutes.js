@@ -53,11 +53,11 @@ router.get("/all", getAllBlogsDirectController);
 router.get("/popular", getPopularBlogs);
 router.get("/recent", getRecentBlogs);
 router.get("/:id/related", getRelatedBlogs);
-router.post("/:id/like", protect, toggleLike);
+router.post("/:id/like", optionalAuth, toggleLike);
 router.patch("/:id/view", incrementView);
 
 router.get("/:id/comments", getComments);
-router.post("/:id/comments", protect, addComment);
+router.post("/:id/comments", optionalAuth, addComment);
 router.delete("/:id/comments/:cId", protect, deleteComment);
 
 

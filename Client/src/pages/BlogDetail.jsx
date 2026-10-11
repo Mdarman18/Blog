@@ -21,6 +21,7 @@ import ErrorMessage from "../components/ErrorMessage";
 import Loader from "../components/Loader";
 import MarkdownContent from "../components/MarkdownContent";
 import ConfirmModal from "../components/ConfirmModal";
+import CommentsSection from "../components/CommentsSection";
 import toast from "react-hot-toast";
 import { optimizeImage } from "../utils/optimizeImage";
 
@@ -54,7 +55,13 @@ export default function BlogDetail() {
           });
         }
         setBlog(normalizedBlog);
-        setLiked(normalizedBlog.likes?.includes(user?._id || user?.id));
+        const currentUserId = user?._id || user?.id;
+        if (currentUserId) {
+          setLiked(normalizedBlog.likes?.includes(currentUserId));
+        } else {
+          const guestLikes = JSON.parse(localStorage.getItem("guest_liked_blogs") || "[]");
+          setLiked(guestLikes.includes(id));
+        }
         setLikesCount(normalizedBlog.likes?.length || 0);
         setViews(normalizedBlog.views || 0);
         
@@ -129,15 +136,37 @@ export default function BlogDetail() {
   };
 
   const handleLike = async () => {
-    if (!user) return toast.error("Please login to like this blog");
     const newLikedState = !liked;
     setLiked(newLikedState);
-    setLikesCount(prev => newLikedState ? prev + 1 : prev - 1);
+    setLikesCount(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
+
+    // Persist guest like status locally
+    const currentUserId = user?._id || user?.id;
+    let guestId = localStorage.getItem("guest_user_id");
+    if (!guestId) {
+      guestId = "guest_" + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem("guest_user_id", guestId);
+    }
+
+    if (!currentUserId) {
+      const storedLikes = JSON.parse(localStorage.getItem("guest_liked_blogs") || "[]");
+      if (newLikedState) {
+        if (!storedLikes.includes(id)) storedLikes.push(id);
+      } else {
+        const idx = storedLikes.indexOf(id);
+        if (idx !== -1) storedLikes.splice(idx, 1);
+      }
+      localStorage.setItem("guest_liked_blogs", JSON.stringify(storedLikes));
+    }
+
     try {
-      await blogApi.toggleLike(id);
+      const res = await blogApi.toggleLike(id, { guestId });
+      if (res.data?.likesCount !== undefined) {
+        setLikesCount(res.data.likesCount);
+      }
     } catch (err) {
       setLiked(!newLikedState);
-      setLikesCount(prev => !newLikedState ? prev + 1 : prev - 1);
+      setLikesCount(prev => !newLikedState ? prev + 1 : Math.max(0, prev - 1));
       toast.error("Failed to toggle like");
     }
   };
@@ -465,6 +494,9 @@ export default function BlogDetail() {
             <MarkdownContent>{blog.conclusion}</MarkdownContent>
           </section>
         )}
+
+        {/* Comments Section */}
+        <CommentsSection blogId={blog._id || id} />
       </div>
     </article>
     <ConfirmModal

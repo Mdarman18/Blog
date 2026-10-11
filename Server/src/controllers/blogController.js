@@ -221,14 +221,17 @@ export const toggleLike = catchAsync(async (req, res, next) => {
   const blog = await Blog.findById(req.params.id);
   if (!blog) return next(new AppError("Blog not found", 404));
 
-  const userId = req.user.id;
-  const isLiked = blog.likes?.includes(userId);
+  // Identifier can be user ID (if logged in) or client identifier (IP or body identifier)
+  const identifier = req.user?.id || req.body.guestId || req.ip || "guest_anonymous";
+  if (!blog.likes) blog.likes = [];
+
+  const existingIndex = blog.likes.findIndex((item) => String(item) === String(identifier));
+  const isLiked = existingIndex !== -1;
 
   if (isLiked) {
-    blog.likes.pull(userId);
+    blog.likes.splice(existingIndex, 1);
   } else {
-    if (!blog.likes) blog.likes = [];
-    blog.likes.push(userId);
+    blog.likes.push(identifier);
   }
   await blog.save();
 

@@ -11,10 +11,13 @@ export const blogApi = {
   createBlog: (data) => axiosInstance.post("/api/blogs/create", data),
   updateBlog: (id, data) => axiosInstance.put(`/api/blogs/${id}`, data),
   generateBlog: (title) => axiosInstance.post("/api/ai/generate", { title }),
-  toggleLike: (id) => axiosInstance.post(`/api/blogs/${id}/like`),
+  toggleLike: (id, data = {}) => axiosInstance.post(`/api/blogs/${id}/like`, data),
   incrementView: (id) => axiosInstance.patch(`/api/blogs/${id}/view`),
   getComments: (id) => axiosInstance.get(`/api/blogs/${id}/comments`),
-  addComment: (id, text) => axiosInstance.post(`/api/blogs/${id}/comments`, { text }),
+  addComment: (id, commentData) => {
+    const payload = typeof commentData === "string" ? { text: commentData } : commentData;
+    return axiosInstance.post(`/api/blogs/${id}/comments`, payload);
+  },
   deleteComment: (id, cId) => axiosInstance.delete(`/api/blogs/${id}/comments/${cId}`),
   deleteBlog: async (id) => {
     const url = `/api/blogs/${id}`;
