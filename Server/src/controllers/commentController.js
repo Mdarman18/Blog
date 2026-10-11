@@ -24,14 +24,32 @@ export const addComment = catchAsync(async (req, res, next) => {
     return next(new AppError("Comment text is required", 400));
   }
 
+  // Name and email are required
+  const name = userId ? (req.user?.name || guestName) : guestName;
+  const email = userId ? (req.user?.email || guestEmail) : guestEmail;
+
+  if (!name || name.trim() === "") {
+    return next(new AppError("Name is required to post a comment", 400));
+  }
+
+  if (!email || email.trim() === "") {
+    return next(new AppError("Email is required to post a comment", 400));
+  }
+
+  // Basic email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return next(new AppError("Please provide a valid email address", 400));
+  }
+
   const blog = await Blog.findById(id);
   if (!blog) return next(new AppError("Blog not found", 404));
 
   const comment = await Comment.create({
     blogId: id,
     userId,
-    guestName: guestName ? guestName.trim() : (userId ? "" : "Guest Reader"),
-    guestEmail: guestEmail ? guestEmail.trim() : "",
+    guestName: name.trim(),
+    guestEmail: email.trim().toLowerCase(),
     text: text.trim(),
   });
 

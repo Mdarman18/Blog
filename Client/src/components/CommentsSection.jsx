@@ -35,6 +35,20 @@ export default function CommentsSection({ blogId }) {
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
+
+    if (!user) {
+      if (!guestName.trim()) {
+        return toast.error("Please enter your name");
+      }
+      if (!guestEmail.trim()) {
+        return toast.error("Please enter your email");
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(guestEmail.trim())) {
+        return toast.error("Please enter a valid email address");
+      }
+    }
+
     if (!commentText.trim()) {
       return toast.error("Please enter a comment");
     }
@@ -43,8 +57,8 @@ export default function CommentsSection({ blogId }) {
     try {
       const payload = {
         text: commentText.trim(),
-        guestName: guestName.trim() || undefined,
-        guestEmail: guestEmail.trim() || undefined,
+        guestName: user ? (user.name || undefined) : guestName.trim(),
+        guestEmail: user ? (user.email || undefined) : guestEmail.trim(),
       };
 
       const res = await blogApi.addComment(blogId, payload);
@@ -57,8 +71,9 @@ export default function CommentsSection({ blogId }) {
       }
 
       setCommentText("");
-      setGuestName("");
-      setGuestEmail("");
+      if (!user) {
+        // Keep name and email saved in local storage or state for convenience, or clear
+      }
       toast.success("Comment posted successfully!");
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to post comment";
@@ -111,11 +126,12 @@ export default function CommentsSection({ blogId }) {
         {!user && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                Your Name <span className="text-gray-400 font-normal">(optional)</span>
+              <label className="mb-1 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Your Name <span className="text-rose-500 font-bold">*</span>
               </label>
               <input
                 type="text"
+                required
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
                 placeholder="e.g. Alex Smith"
@@ -123,11 +139,12 @@ export default function CommentsSection({ blogId }) {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
-                Your Email <span className="text-gray-400 font-normal">(optional)</span>
+              <label className="mb-1 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Your Email <span className="text-rose-500 font-bold">*</span>
               </label>
               <input
                 type="email"
+                required
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
                 placeholder="alex@example.com"
