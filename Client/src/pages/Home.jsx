@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { setPopularBlogs, setRecentBlogs } from "../redux/slices/blogSlice";
 import { blogApi } from "../api/blogApi";
 import { normalizeBlogList } from "../api/normalize";
 import { useDebounce } from "../hooks/useDebounce";
@@ -11,6 +13,9 @@ import ErrorMessage from "../components/ErrorMessage";
 
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const dispatch = useDispatch();
+  const { popularBlogs, recentBlogs } = useSelector((state) => state.blog);
+
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -22,11 +27,13 @@ export default function Home() {
   const initialSearch = searchParams.get("search") || "";
   const initialTag = searchParams.get("tag") || "";
   const initialPage = parseInt(searchParams.get("page")) || 1;
+  const initialSort = searchParams.get("sort") || "latest";
 
   const [searchInput, setSearchInput] = useState(initialSearch);
   const debouncedSearch = useDebounce(searchInput, 400);
   const [activeTag, setActiveTag] = useState(initialTag);
   const [currentPage, setCurrentPage] = useState(initialPage);
+  const [sortOrder, setSortOrder] = useState(initialSort);
 
   const abortControllerRef = useRef(null);
 
@@ -36,9 +43,25 @@ export default function Home() {
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (activeTag) params.set("tag", activeTag);
     if (currentPage > 1) params.set("page", currentPage.toString());
+    if (sortOrder !== "latest") params.set("sort", sortOrder);
 
     setSearchParams(params, { replace: true });
-  }, [debouncedSearch, activeTag, currentPage, setSearchParams]);
+  }, [debouncedSearch, activeTag, currentPage, sortOrder, setSearchParams]);
+
+  // Fetch popular and recent blogs on mount
+  useEffect(() => {
+    const fetchSidebarData = async () => {
+      try {
+        const popRes = await blogApi.getPopularBlogs();
+        if (popRes.data?.data?.blogs) dispatch(setPopularBlogs(popRes.data.data.blogs));
+        const recRes = await blogApi.getRecentBlogs();
+        if (recRes.data?.data?.blogs) dispatch(setRecentBlogs(recRes.data.data.blogs));
+      } catch (err) {
+        console.error("Failed to load sidebar blogs", err);
+      }
+    };
+    fetchSidebarData();
+  }, [dispatch]);
 
   // Fetch data when params change
   useEffect(() => {
@@ -59,6 +82,7 @@ export default function Home() {
             tag: activeTag || undefined,
             page: currentPage,
             limit,
+            sort: sortOrder,
           },
           { signal: abortControllerRef.current.signal },
         );
@@ -85,12 +109,12 @@ export default function Home() {
         abortControllerRef.current.abort();
       }
     };
-  }, [debouncedSearch, activeTag, currentPage]);
+  }, [debouncedSearch, activeTag, currentPage, sortOrder]);
 
   // Reset to page 1 when search or tag changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, activeTag]);
+  }, [debouncedSearch, activeTag, sortOrder]);
 
   const handleTagClick = (tag) => {
     setActiveTag(tag);
@@ -132,21 +156,38 @@ export default function Home() {
           setSearchInput(initialSearch);
           setActiveTag("");
           setCurrentPage(1);
+          setSortOrder("latest");
         }}
       />
 
-      <BlogGrid blogs={blogs} loading={loading} onTagClick={handleTagClick} />
+      <div className="flex justify-end mb-6">
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+          className="border border-gray-300 rounded-md py-2 px-4 text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+        >
+          <option value="latest">Latest</option>
+          <option value="oldest">Oldest</option>
+          <option value="popular">Popular</option>
+        </select>
+      </div>
 
-      {!loading && !error && (
-        <Pagination
-          page={currentPage}
-          totalPages={totalPages}
-          onPageChange={(page) => {
-            setCurrentPage(page);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-        />
-      )}
+      <div className="flex flex-col w-full">
+        <div className="w-full">
+          <BlogGrid blogs={blogs} loading={loading} onTagClick={handleTagClick} />
+
+          {!loading && !error && (
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => {
+                setCurrentPage(page);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

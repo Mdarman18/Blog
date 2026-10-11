@@ -60,6 +60,14 @@ const blogSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    likes: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }],
+    views: {
+      type: Number,
+      default: 0
+    }
   },
   { timestamps: true }
 );
@@ -70,6 +78,9 @@ blogSchema.index({
   content: "text",
   tags: "text",
 });
+
+blogSchema.index({ views: -1 });
+blogSchema.index({ createdAt: -1 });
 
 const Blog = mongoose.model("Blog", blogSchema);
 

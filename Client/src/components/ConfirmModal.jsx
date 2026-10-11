@@ -14,7 +14,7 @@ export default function ConfirmModal({
     <div className="fixed inset-0 z-[100] overflow-y-auto">
       <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div
-          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity dark:bg-black/80"
+          className="fixed inset-0 z-0 bg-gray-500 bg-opacity-75 transition-opacity dark:bg-black/80"
           aria-hidden="true"
           onClick={!isLoading ? onCancel : undefined}
         ></div>
@@ -26,7 +26,7 @@ export default function ConfirmModal({
           &#8203;
         </span>
 
-        <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all dark:bg-gray-800 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+        <div className="relative z-10 inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all dark:bg-gray-800 sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
           <div className="bg-white px-4 pt-5 pb-4 dark:bg-gray-800 sm:p-6 sm:pb-4">
             <div className="sm:flex sm:items-start">
               <div className="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40 sm:mx-0 sm:h-10 sm:w-10">

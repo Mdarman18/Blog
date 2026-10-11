@@ -304,11 +304,18 @@ export default function BlogForm({
             <MarkdownContent>{formData.content}</MarkdownContent>
           </div>
         )}
-        {errors.content && (
-          <p className="mt-1 text-sm text-red-700 dark:text-red-400">
-            {errors.content}
+        <div className="mt-1 flex justify-between">
+          {errors.content ? (
+            <p className="text-sm text-red-700 dark:text-red-400">
+              {errors.content}
+            </p>
+          ) : (
+            <span></span>
+          )}
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {formData.content.trim().split(/\s+/).filter(Boolean).length} words | {formData.content.length} characters
           </p>
-        )}
+        </div>
       </div>
 
       <div>

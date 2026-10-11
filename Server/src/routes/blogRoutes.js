@@ -7,7 +7,13 @@ import {
   updateBlog,
   deleteBlog,
   getMyPosts,
+  toggleLike,
+  incrementView,
+  getPopularBlogs,
+  getRecentBlogs,
+  getRelatedBlogs,
 } from "../controllers/blogController.js";
+import { getComments, addComment, deleteComment } from "../controllers/commentController.js";
 
 import { protect, optionalAuth, authorize } from "../middlewares/auth.js";
 
@@ -43,6 +49,17 @@ const router = Router();
  *         description: Internal server error
  */
 router.get("/all", getAllBlogsDirectController);
+
+router.get("/popular", getPopularBlogs);
+router.get("/recent", getRecentBlogs);
+router.get("/:id/related", getRelatedBlogs);
+router.post("/:id/like", protect, toggleLike);
+router.patch("/:id/view", incrementView);
+
+router.get("/:id/comments", getComments);
+router.post("/:id/comments", protect, addComment);
+router.delete("/:id/comments/:cId", protect, deleteComment);
+
 
 // FIX: /:id se pehle hona zaroori hai, warna "my-posts" ko id samajh lega
 // (agar ye route kisi aur file me already register hai to ye 1 line hata dena)

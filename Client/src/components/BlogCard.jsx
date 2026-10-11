@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Bookmark, ArrowRight, CalendarDays, Clock3 } from "lucide-react";
 import { getBlogId } from "../api/normalize";
+import { blogApi } from "../api/blogApi";
 import { optimizeImage } from "../utils/optimizeImage";
 import StatusBadge from "./StatusBadge"; // Optional if you want to keep status capability
 
@@ -32,6 +34,12 @@ export default function BlogCard({
 }) {
   const [saved, setSaved] = useState(blog?.saved || false);
   const [imgFailed, setImgFailed] = useState(false);
+  const [localViews, setLocalViews] = useState(blog?.views || 0);
+
+  useEffect(() => {
+    setLocalViews(blog?.views || 0);
+  }, [blog?.views]);
+  
   const id = getBlogId(blog);
   if (import.meta.env.DEV) {
     console.debug("[blog card status]", { blogId: id, status: blog?.status });
@@ -51,7 +59,12 @@ export default function BlogCard({
   const imageUrl = blog?.images?.[0]?.url || blog?.image?.url || blog?.coverImage;
 
   const categoryName = blog?.category || blog?.tags?.[0] || "General";
-  const readTimeString = blog?.readTime || "5 min read";
+  
+  const wordCount = (blog?.content || "").trim().split(/\s+/).filter(Boolean).length;
+  const readingMinutes = Math.max(1, Math.ceil(wordCount / 200));
+  const readTimeString = `${readingMinutes} min read`;
+  
+  const views = blog?.views || 0;
   const blogLink = `/blogs/${id}`;
   const excerpt = getPlainTextExcerpt(blog?.excerpt || blog?.content);
 
@@ -64,9 +77,17 @@ export default function BlogCard({
     }
   };
 
+  const handleReadClick = () => {
+    if (!sessionStorage.getItem(`viewed_${id}`)) {
+      setLocalViews(prev => prev + 1);
+      blogApi.incrementView(id).catch(() => {});
+      sessionStorage.setItem(`viewed_${id}`, 'true');
+    }
+  };
+
   return (
     <article
-      className="blog-card group relative h-105 w-full animate-fade-up overflow-hidden rounded-[22px] border opacity-0 transition-transform duration-500 hover:-translate-y-2 focus-within:ring-2 focus-within:ring-indigo-400"
+      className="blog-card group relative h-[420px] w-full animate-fade-up overflow-hidden rounded-[22px] border opacity-0 transition-transform duration-500 hover:-translate-y-2 focus-within:ring-2 focus-within:ring-indigo-400"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       {/* Background image */}
@@ -139,12 +160,17 @@ export default function BlogCard({
                 <Clock3 size={12} aria-hidden="true" />
                 {readTimeString}
               </span>
+              <span className="inline-flex items-center gap-1 ml-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                {localViews} views
+              </span>
             </span>
           </div>
         </div>
 
-        <a
-          href={blogLink}
+        <Link
+          to={blogLink}
+          onClick={handleReadClick}
           aria-label={`Read ${blog?.title || "blog"}`}
           className="blog-card-action mt-4 inline-flex items-center justify-center gap-2 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
         >
@@ -153,7 +179,7 @@ export default function BlogCard({
             size={16}
             className="shrink-0 transition-transform duration-300 group-hover:translate-x-1"
           />
-        </a>
+        </Link>
       </div>
     </article>
   );
@@ -162,7 +188,7 @@ export default function BlogCard({
 export function BlogCardSkeleton({ index = 0 }) {
   return (
     <article
-      className="blog-card group relative h-105 w-full animate-fade-up overflow-hidden rounded-[22px] border opacity-0"
+      className="blog-card group relative h-[420px] w-full animate-fade-up overflow-hidden rounded-[22px] border opacity-0"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       {/* Top row: badge + bookmark skeleton */}

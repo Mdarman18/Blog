@@ -16,6 +16,7 @@ import Loader from "../components/Loader";
 import ErrorMessage from "../components/ErrorMessage";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -34,6 +35,9 @@ export default function Dashboard() {
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [togglingStatusId, setTogglingStatusId] = useState(null);
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [blogToDelete, setBlogToDelete] = useState(null);
 
   const fetchStats = async () => {
     try {
@@ -118,7 +122,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleDelete = async (blog) => {
+  const handleDeleteClick = (blog) => {
     if (!blog || isDeleting) return;
 
     if (user?.role !== "admin") {
@@ -126,11 +130,17 @@ export default function Dashboard() {
       return;
     }
 
-    if (!window.confirm("Are you sure you want to delete this blog?")) return;
+    setBlogToDelete(blog);
+    setIsDeleteModalOpen(true);
+  };
 
-    const id = getBlogId(blog);
+  const executeDelete = async () => {
+    if (!blogToDelete || isDeleting) return;
+    
+    const id = getBlogId(blogToDelete);
     if (!id) {
       toast.error("Cannot delete blog: ID is missing.");
+      setIsDeleteModalOpen(false);
       return;
     }
     setIsDeleting(true);
@@ -167,6 +177,8 @@ export default function Dashboard() {
       toast.error(message);
     } finally {
       setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+      setBlogToDelete(null);
     }
   };
 
@@ -369,7 +381,7 @@ export default function Dashboard() {
                         </Link>
                         {user?.role === "admin" ? (
                           <button
-                            onClick={() => handleDelete(blog)}
+                            onClick={() => handleDeleteClick(blog)}
                             className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded dark:text-gray-500 dark:hover:text-red-400"
                             title="Delete"
                           >
@@ -405,6 +417,14 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Delete Blog"
+        message="Are you sure you want to delete this blog? This action cannot be undone."
+        onConfirm={executeDelete}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

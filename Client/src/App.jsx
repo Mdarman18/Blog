@@ -6,6 +6,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import BackToTop from "./components/BackToTop";
 
 // Pages (lazy loaded)
 const Home = lazy(() => import("./pages/Home"));
@@ -54,6 +55,7 @@ function App() {
             </main>
             <Footer />
           </div>
+          <BackToTop />
           <Toaster position="top-right" />
         </BrowserRouter>
       </AuthProvider>

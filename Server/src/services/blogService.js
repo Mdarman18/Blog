@@ -55,15 +55,19 @@ export const createBlog = async (blogData) => {
   return await Blog.create(blogData);
 };
 
-export const getAllBlogs = async (filter, { page, limit } = {}) => {
+export const getAllBlogs = async (filter, { page, limit, sort } = {}) => {
   const pageNum = parseInt(page, 10) > 0 ? parseInt(page, 10) : 1;
   const limitNum = parseInt(limit, 10) > 0 ? parseInt(limit, 10) : 10;
   const skip = (pageNum - 1) * limitNum;
 
+  let sortOption = { createdAt: -1 };
+  if (sort === "oldest") sortOption = { createdAt: 1 };
+  if (sort === "popular") sortOption = { views: -1 };
+
   const [blogs, total] = await Promise.all([
     Blog.find(filter)
       .populate("author", "name email")
-      .sort({ createdAt: -1 })
+      .sort(sortOption)
       .skip(skip)
       .limit(limitNum),
     Blog.countDocuments(filter),

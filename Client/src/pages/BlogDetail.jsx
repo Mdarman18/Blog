@@ -14,11 +14,13 @@ import {
   Trash2,
   UserRound,
   XCircle,
+  FileText,
 } from "lucide-react";
 import StatusBadge from "../components/StatusBadge";
 import ErrorMessage from "../components/ErrorMessage";
 import Loader from "../components/Loader";
 import MarkdownContent from "../components/MarkdownContent";
+import ConfirmModal from "../components/ConfirmModal";
 import toast from "react-hot-toast";
 import { optimizeImage } from "../utils/optimizeImage";
 
@@ -29,9 +31,16 @@ export default function BlogDetail() {
 
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // { status, message }
+  const [error, setError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [views, setViews] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
 
   useEffect(() => {
     const fetchBlog = async () => {
@@ -45,6 +54,14 @@ export default function BlogDetail() {
           });
         }
         setBlog(normalizedBlog);
+        setLiked(normalizedBlog.likes?.includes(user?._id || user?.id));
+        setLikesCount(normalizedBlog.likes?.length || 0);
+        setViews(normalizedBlog.views || 0);
+        
+        // Record View once per session
+        if (!sessionStorage.getItem(`viewed_${id}`)) {
+          sessionStorage.setItem(`viewed_${id}`, 'true');
+        }
       } catch (err) {
         const status = err.response?.status;
         setError({
@@ -59,9 +76,12 @@ export default function BlogDetail() {
     fetchBlog();
   }, [id]);
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
     if (isDeleting) return;
-    if (!window.confirm("Are you sure you want to delete this blog?")) return;
     setIsDeleting(true);
     try {
       await blogApi.deleteBlog(blog._id || id);
@@ -85,6 +105,7 @@ export default function BlogDetail() {
       toast.error(message);
     } finally {
       setIsDeleting(false);
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -101,6 +122,37 @@ export default function BlogDetail() {
         toast.error("Could not share this article");
     }
   };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Link copied!");
+  };
+
+  const handleLike = async () => {
+    if (!user) return toast.error("Please login to like this blog");
+    const newLikedState = !liked;
+    setLiked(newLikedState);
+    setLikesCount(prev => newLikedState ? prev + 1 : prev - 1);
+    try {
+      await blogApi.toggleLike(id);
+    } catch (err) {
+      setLiked(!newLikedState);
+      setLikesCount(prev => !newLikedState ? prev + 1 : prev - 1);
+      toast.error("Failed to toggle like");
+    }
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollTop;
+      const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scroll = `${totalScroll / windowHeight}`;
+      setScrollProgress(scroll);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
 
   if (loading) {
     return (
@@ -203,8 +255,12 @@ export default function BlogDetail() {
   };
 
   return (
-    <article className="mx-auto max-w-5xl pb-20 pt-4 sm:pt-8">
-      <header className="px-1 sm:px-4">
+    <>
+      <div className="fixed top-0 left-0 w-full h-1 z-50 bg-gray-200 dark:bg-gray-800">
+        <div className="h-full bg-primary" style={{ transform: `scaleX(${scrollProgress})`, transformOrigin: "left" }} />
+      </div>
+      <article className="mx-auto max-w-5xl pb-20 pt-4 sm:pt-8">
+        <header className="px-1 sm:px-4">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <nav
             aria-label="Breadcrumb"
@@ -232,6 +288,23 @@ export default function BlogDetail() {
             )}
             <button
               type="button"
+              onClick={handleLike}
+              title="Like article"
+              className={`flex h-9 min-w-9 px-2 items-center justify-center gap-1.5 rounded-full border border-gray-200 transition-colors ${liked ? "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20" : "text-gray-600 hover:bg-gray-100 hover:text-rose-600 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"}`}
+            >
+              <svg className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+              <span className="text-xs font-medium">{likesCount}</span>
+            </button>
+            <button
+              type="button"
+              onClick={copyLink}
+              title="Copy link"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition-colors hover:bg-gray-100 hover:text-primary dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+            </button>
+            <button
+              type="button"
               onClick={handleShare}
               title="Share article"
               aria-label="Share article"
@@ -252,7 +325,7 @@ export default function BlogDetail() {
                 {isAdmin ? (
                   <button
                     type="button"
-                    onClick={handleDelete}
+                    onClick={handleDeleteClick}
                     title="Delete article"
                     aria-label="Delete article"
                     className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:border-white/10 dark:text-gray-300 dark:hover:bg-rose-400/10"
@@ -315,6 +388,14 @@ export default function BlogDetail() {
               <span className="inline-flex items-center gap-1.5">
                 <Clock3 className="h-4 w-4" />
                 {readingMinutes} min read
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <FileText className="h-4 w-4" />
+                {wordCount} words
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                {views} views
               </span>
             </div>
           </div>
@@ -386,5 +467,14 @@ export default function BlogDetail() {
         )}
       </div>
     </article>
+    <ConfirmModal
+      isOpen={isDeleteModalOpen}
+      title="Delete Blog"
+      message="Are you sure you want to delete this blog? This action cannot be undone."
+      onConfirm={executeDelete}
+      onCancel={() => setIsDeleteModalOpen(false)}
+      isLoading={isDeleting}
+    />
+    </>
   );
 }

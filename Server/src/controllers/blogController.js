@@ -36,10 +36,11 @@ export const createBlog = catchAsync(async (req, res) => {
 export const getAllBlogs = catchAsync(async (req, res) => {
   const filter = blogService.buildPublicBlogFilter(req.query);
 
-  const { page, limit } = req.query;
+  const { page, limit, sort } = req.query;
   const { blogs, pagination } = await blogService.getAllBlogs(filter, {
     page,
     limit,
+    sort,
   });
 
   res.status(200).json({
@@ -213,4 +214,59 @@ export const getMyPosts = catchAsync(async (req, res) => {
     results: blogs.length,
     data: { blogs },
   });
+});
+
+export const toggleLike = catchAsync(async (req, res, next) => {
+  const Blog = mongoose.model('Blog');
+  const blog = await Blog.findById(req.params.id);
+  if (!blog) return next(new AppError("Blog not found", 404));
+
+  const userId = req.user.id;
+  const isLiked = blog.likes?.includes(userId);
+
+  if (isLiked) {
+    blog.likes.pull(userId);
+  } else {
+    if (!blog.likes) blog.likes = [];
+    blog.likes.push(userId);
+  }
+  await blog.save();
+
+  res.status(200).json({ success: true, liked: !isLiked, likesCount: blog.likes.length });
+});
+
+export const incrementView = catchAsync(async (req, res, next) => {
+  const Blog = mongoose.model('Blog');
+  const blog = await Blog.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }, { new: true });
+  if (!blog) return next(new AppError("Blog not found", 404));
+  res.status(200).json({ success: true, views: blog.views });
+});
+
+export const getPopularBlogs = catchAsync(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 5;
+  const Blog = mongoose.model('Blog');
+  const blogs = await Blog.find({ status: "publish" }).sort({ views: -1 }).limit(limit).populate("author", "name");
+  res.status(200).json({ success: true, data: { blogs } });
+});
+
+export const getRecentBlogs = catchAsync(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 5;
+  const Blog = mongoose.model('Blog');
+  const blogs = await Blog.find({ status: "publish" }).sort({ createdAt: -1 }).limit(limit).populate("author", "name");
+  res.status(200).json({ success: true, data: { blogs } });
+});
+
+export const getRelatedBlogs = catchAsync(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 4;
+  const Blog = mongoose.model('Blog');
+  const blog = await Blog.findById(req.params.id);
+  if (!blog) return res.status(404).json({ success: false, message: "Blog not found" });
+
+  const blogs = await Blog.find({
+    _id: { $ne: blog._id },
+    status: "publish",
+    tags: { $in: blog.tags }
+  }).limit(limit).populate("author", "name");
+
+  res.status(200).json({ success: true, data: { blogs } });
 });
